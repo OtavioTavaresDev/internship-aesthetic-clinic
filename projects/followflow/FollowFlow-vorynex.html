@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FlowTasks — Intelligent Follow-Up Manager</title>
+    <style>
+        /* ===== RESET & BASE ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f4f6fa; color: #1e293b; display: flex; height: 100vh; overflow: hidden; }
+        button { cursor: pointer; font-family: inherit; border: none; background: none; }
+        input, select, textarea { font-family: inherit; font-size: 0.95rem; border: 1px solid #d1d9e6; border-radius: 8px; padding: 0.6rem 0.9rem; background: #fff; transition: 0.2s; width: 100%; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
+        textarea { resize: vertical; min-height: 70px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #e9edf4; }
+        ::-webkit-scrollbar-thumb { background: #b9c4d4; border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9aa9bd; }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar { width: 220px; background: #fff; border-right: 1px solid #e9edf4; display: flex; flex-direction: column; padding: 1.5rem 0.8rem; flex-shrink: 0; height: 100vh; overflow-y: auto; }
+        .sidebar .logo { font-weight: 700; font-size: 1.3rem; color: #7c3aed; padding: 0 0.8rem 1.8rem 0.8rem; display: flex; align-items: center; gap: 8px; }
+        .sidebar .logo span { background: #7c3aed; color: #fff; font-size: 0.7rem; border-radius: 20px; padding: 0.1rem 0.6rem; margin-left: 4px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 0.7rem 0.9rem; border-radius: 10px; color: #475569; font-weight: 500; font-size: 0.95rem; transition: 0.15s; margin-bottom: 2px; cursor: pointer; }
+        .nav-item:hover { background: #f1f5f9; color: #1e293b; }
+        .nav-item.active { background: #ede9fe; color: #7c3aed; font-weight: 600; }
+        .nav-item .icon { font-size: 1.2rem; width: 24px; text-align: center; }
+        .sidebar .bottom { margin-top: auto; border-top: 1px solid #e9edf4; padding-top: 0.8rem; }
+        .sidebar .bottom .brand { font-size: 0.7rem; color: #94a3b8; margin-top: 0.5rem; text-align: center; }
+
+        /* ===== MAIN ===== */
+        .main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: #f8fafc; }
+        .topbar { background: #fff; padding: 0.8rem 2rem; border-bottom: 1px solid #e9edf4; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+        .topbar h2 { font-size: 1.2rem; font-weight: 600; color: #0f172a; }
+        .topbar .badge { background: #ede9fe; color: #7c3aed; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.7rem; border-radius: 20px; }
+        .content { flex: 1; overflow-y: auto; padding: 1.5rem 2rem 2rem 2rem; }
+
+        /* ===== SECTIONS ===== */
+        .section { display: none; animation: fadeUp 0.25s ease; }
+        .section.active { display: block; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ===== CARDS ===== */
+        .card { background: #fff; border-radius: 16px; padding: 1.2rem 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border: 1px solid #e9edf4; margin-bottom: 1.2rem; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
+        .card-header h3 { font-weight: 600; font-size: 1.05rem; color: #0f172a; }
+
+        /* ===== TASK LIST ===== */
+        .task-item { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.9rem 0; border-bottom: 1px solid #f1f5f9; }
+        .task-item:last-child { border-bottom: none; }
+        .task-item .task-check { padding-top: 0.2rem; }
+        .task-item .task-check input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .task-item .task-info { flex: 1; min-width: 0; }
+        .task-item .task-info .task-title { font-weight: 600; color: #0f172a; font-size: 0.98rem; }
+        .task-item .task-info .task-meta { font-size: 0.85rem; color: #64748b; margin-top: 2px; display: flex; flex-wrap: wrap; gap: 6px 16px; }
+        .task-item .task-info .task-meta .tag { background: #f1f5f9; padding: 0.1rem 0.6rem; border-radius: 12px; font-size: 0.75rem; color: #475569; }
+        .task-item .task-info .task-meta .tag.done { background: #dcfce7; color: #16a34a; }
+        .task-item .task-info .task-msg { background: #f8fafc; padding: 0.5rem 0.7rem; border-radius: 8px; margin-top: 6px; font-size: 0.9rem; color: #334155; border-left: 3px solid #d1d9e6; word-break: break-word; }
+        .task-item .task-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; align-items: center; }
+        .task-item .task-actions button { padding: 0.3rem 0.7rem; border-radius: 6px; font-size: 0.8rem; font-weight: 500; transition: 0.15s; background: #f1f5f9; color: #334155; white-space: nowrap; }
+        .task-item .task-actions button:hover { background: #e2e8f0; }
+        .task-item .task-actions .btn-copy { background: #ede9fe; color: #7c3aed; }
+        .task-item .task-actions .btn-copy:hover { background: #ddd6fe; }
+        .task-item .task-actions .btn-done { background: #dcfce7; color: #16a34a; }
+        .task-item .task-actions .btn-done:hover { background: #bbf7d0; }
+        .task-item .task-actions .btn-undo { background: #fef3c7; color: #d97706; }
+        .task-item .task-actions .btn-undo:hover { background: #fde68a; }
+        .task-item .task-actions .btn-del { background: #fee2e2; color: #dc2626; }
+        .task-item .task-actions .btn-del:hover { background: #fecaca; }
+        .task-item .task-actions .btn-edit { background: #e0f2fe; color: #0284c7; }
+        .task-item .task-actions .btn-edit:hover { background: #bae6fd; }
+        .task-item .task-actions .btn-duplicate { background: #f1f5f9; color: #475569; }
+
+        /* ===== EMPTY STATE ===== */
+        .empty { text-align: center; padding: 2.5rem 1rem; color: #94a3b8; }
+        .empty .big-icon { font-size: 2.8rem; margin-bottom: 0.6rem; }
+        .empty p { font-size: 0.95rem; }
+
+        /* ===== FORMS ===== */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-grid .full { grid-column: 1 / -1; }
+        .form-actions { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-top: 0.5rem; }
+        .btn-primary { background: #7c3aed; color: #fff; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 600; font-size: 0.95rem; transition: 0.15s; }
+        .btn-primary:hover { background: #6d28d9; }
+        .btn-secondary { background: #f1f5f9; color: #334155; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 500; font-size: 0.95rem; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-danger { background: #fee2e2; color: #dc2626; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 500; }
+        .btn-danger:hover { background: #fecaca; }
+        .btn-sm { padding: 0.25rem 0.8rem; font-size: 0.8rem; border-radius: 6px; }
+        .btn-success { background: #dcfce7; color: #16a34a; }
+        .btn-success:hover { background: #bbf7d0; }
+
+        /* ===== PROTOCOLS ===== */
+        .protocol-item { border: 1px solid #e9edf4; border-radius: 12px; padding: 1rem 1.2rem; margin-bottom: 0.8rem; background: #fafcff; }
+        .protocol-item .p-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        .protocol-item .p-header .p-name { font-weight: 600; font-size: 1.05rem; }
+        .protocol-item .p-header .p-badge { font-size: 0.75rem; background: #f1f5f9; padding: 0.1rem 0.7rem; border-radius: 12px; color: #475569; }
+        .protocol-item .p-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+        .protocol-item .p-actions .acao-tag { background: #f1f5f9; padding: 0.15rem 0.7rem; border-radius: 12px; font-size: 0.8rem; color: #334155; display: inline-flex; align-items: center; gap: 4px; }
+        .protocol-item .p-actions .acao-tag .dias { font-weight: 600; color: #7c3aed; }
+
+        /* ===== DASHBOARD ===== */
+        .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .dash-card { background: #fff; border: 1px solid #e9edf4; border-radius: 14px; padding: 1rem 1.2rem; text-align: center; }
+        .dash-card .num { font-size: 2rem; font-weight: 700; color: #0f172a; line-height: 1.2; }
+        .dash-card .label { font-size: 0.85rem; color: #64748b; }
+        .dash-card .dash-icon { font-size: 1.6rem; display: block; margin-bottom: 2px; }
+
+        /* ===== MODAL ===== */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.4); backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; z-index: 999; padding: 1rem; }
+        .modal-overlay.open { display: flex; }
+        .modal-box { background: #fff; border-radius: 20px; max-width: 600px; width: 100%; padding: 1.8rem 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.15); max-height: 90vh; overflow-y: auto; animation: fadeUp 0.2s ease; }
+        .modal-box h3 { font-weight: 600; font-size: 1.2rem; margin-bottom: 1.2rem; }
+        .modal-box .form-group { margin-bottom: 1rem; }
+        .modal-box .form-group label { display: block; font-weight: 500; font-size: 0.9rem; color: #334155; margin-bottom: 4px; }
+        .modal-box .modal-actions { display: flex; gap: 0.7rem; justify-content: flex-end; margin-top: 1.2rem; }
+
+        /* ===== TABLES ===== */
+        .table-wrap { overflow-x: auto; margin-top: 0.5rem; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { padding: 0.4rem 0.6rem; border-bottom: 1px solid #e9edf4; text-align: left; }
+        th { font-weight: 600; color: #475569; background: #f8fafc; }
+        td .btn-sm { margin: 0 2px; }
+
+        /* ===== SEARCH ===== */
+        .search-box { display: flex; gap: 0.7rem; margin-bottom: 1.2rem; flex-wrap: wrap; align-items: center; }
+        .search-box input { flex: 1; min-width: 150px; }
+
+        /* ===== FILTER TABS ===== */
+        .filter-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 1.2rem; background: #f1f5f9; border-radius: 12px; padding: 4px; }
+        .filter-tabs .tab { padding: 0.4rem 1.2rem; border-radius: 8px; font-weight: 500; font-size: 0.85rem; color: #475569; transition: 0.15s; cursor: pointer; }
+        .filter-tabs .tab:hover { background: #e2e8f0; }
+        .filter-tabs .tab.active { background: #fff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+
+        /* ===== DATE FILTER ===== */
+        .filter-date { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+        .filter-date label { font-weight: 500; font-size: 0.9rem; color: #475569; }
+
+        /* ===== BULK ACTIONS ===== */
+        .bulk-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.5rem; }
+
+        .mt-1 { margin-top: 0.5rem; }
+        .mb-1 { margin-bottom: 0.5rem; }
+        .flex { display: flex; }
+        .gap-2 { gap: 0.5rem; }
+        .items-center { align-items: center; }
+        .text-muted { color: #94a3b8; font-size: 0.85rem; }
+        .color-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+        .w-full { width: 100%; }
+    </style>
+</head>
+<body>
+
+    <!-- ===== SIDEBAR ===== -->
+    <nav class="sidebar" id="sidebar">
+        <div class="logo">📋 Follow<span>Tasks</span></div>
+        <div class="nav-item active" data-section="tarefas"><span class="icon">📌</span><span class="label">Tarefas</span></div>
+        <div class="nav-item" data-section="proximas"><span class="icon">📅</span><span class="label">Próximas</span></div>
+        <div class="nav-item" data-section="atendimento"><span class="icon">✚</span><span class="label">Novo Atend.</span></div>
+        <div class="nav-item" data-section="protocolos"><span class="icon">📂</span><span class="label">Protocolos</span></div>
+        <div class="nav-item" data-section="historico"><span class="icon">📖</span><span class="label">Histórico</span></div>
+        <div class="nav-item" data-section="dashboard"><span class="icon">📊</span><span class="label">Dashboard</span></div>
+        <div class="bottom">
+            <div class="nav-item" data-section="backup"><span class="icon">💾</span><span class="label">Backup</span></div>
+            <div class="brand">© 2026 FollowFlow · Vorynex Tech</div>
+        </div>
+    </nav>
+
+    <!-- ===== MAIN ===== -->
+    <div class="main">
+        <header class="topbar">
+            <h2 id="pageTitle">📌 Tarefas</h2>
+            <span class="badge" id="topBadge">Smart</span>
+        </header>
+
+        <div class="content" id="mainContent">
+
+            <!-- ===== TASK SECTION ===== -->
+            <section class="section active" id="sec-tarefas">
+                <div class="filter-tabs" id="tarefaFilterTabs">
+                    <div class="tab active" data-filter="hoje">To do today</div>
+                    <div class="tab" data-filter="concluidas">Completed</div>
+                    <div class="tab" data-filter="futuras">Future</div>
+                </div>
+                <div class="filter-date">
+                    <label>Filter by date:</label>
+                    <input type="date" id="tarefaFiltroData" style="width:auto; max-width:200px;" />
+                    <button class="btn-secondary btn-sm" id="tarefaFiltroDataLimpar">Clear</button>
+                </div>
+                <div class="bulk-actions">
+                    <span style="font-weight:500; font-size:0.9rem;">Select:</span>
+                    <button class="btn-secondary btn-sm" id="selecionarTodosTarefas">All</button>
+                    <button class="btn-secondary btn-sm" id="desselecionarTodosTarefas">None</button>
+                    <button class="btn-danger btn-sm" id="excluirSelecionadosTarefas">🗑️ Delete selected</button>
+                </div>
+                <div id="tarefasContainer"></div>
+            </section>
+
+            <!-- ===== UPCOMING SECTION ===== -->
+            <section class="section" id="sec-proximas">
+                <div class="filter-tabs" id="filterTabs">
+                    <div class="tab active" data-filter="hoje">Today</div>
+                    <div class="tab" data-filter="amanha">Tomorrow</div>
+                    <div class="tab" data-filter="7dias">7 days</div>
+                    <div class="tab" data-filter="15dias">15 days</div>
+                    <div class="tab" data-filter="30dias">30 days</div>
+                    <div class="tab" data-filter="data">Specific date</div>
+                    <div class="tab" data-filter="atrasadas">Overdue</div>
+                </div>
+                <div id="proximasFiltroData" style="display:none; margin-bottom:1rem;">
+                    <input type="date" id="proximasDataEspecifica" />
+                </div>
+                <div class="bulk-actions">
+                    <span style="font-weight:500; font-size:0.9rem;">Select:</span>
+                    <button class="btn-secondary btn-sm" id="selecionarTodosProximas">All</button>
+                    <button class="btn-secondary btn-sm" id="desselecionarTodosProximas">None</button>
+                    <button class="btn-danger btn-sm" id="excluirSelecionadosProximas">🗑️ Delete selected</button>
+                </div>
+                <div id="proximasContainer"></div>
+            </section>
+
+            <!-- ===== NEW APPOINTMENT SECTION ===== -->
+            <section class="section" id="sec-atendimento">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>✚ Register Appointment</h3>
+                        <div>
+                            <button class="btn-secondary btn-sm" id="btnImportarAgenda">📥 Import schedule (.txt)</button>
+                        </div>
+                    </div>
+                    <form id="formAtendimento">
+                        <div class="form-grid">
+                            <div class="full">
+                                <label>Client *</label>
+                                <div style="display:flex; gap:0.5rem;">
+                                    <input type="text" id="atdCliente" placeholder="Full name" list="clientesList" required style="flex:1;" />
+                                    <button type="button" class="btn-primary btn-sm" id="btnAddCliente">+</button>
+                                </div>
+                                <datalist id="clientesList"></datalist>
+                            </div>
+                            <div>
+                                <label>Phone</label>
+                                <input type="text" id="atdTelefone" placeholder="(00) 00000-0000" />
+                            </div>
+                            <div>
+                                <label>Professional</label>
+                                <input type="text" id="atdProfissional" placeholder="Type or select" list="profissionaisList" />
+                                <datalist id="profissionaisList">
+                                    <option value="Expert A">
+                                    <option value="Expert B">
+                                    <option value="Consultant C">
+                                    <option value="Specialist D">
+                                    <option value="Advisor E">
+                                </datalist>
+                            </div>
+                            <div>
+                                <label>Date *</label>
+                                <input type="date" id="atdData" required />
+                            </div>
+                            <div>
+                                <label>Time</label>
+                                <input type="time" id="atdHorario" />
+                            </div>
+                            <div>
+                                <label>Service / Procedure</label>
+                                <div style="display:flex; gap:0.5rem;">
+                                    <select id="atdProcedimento" style="flex:1;"></select>
+                                    <button type="button" class="btn-secondary btn-sm" id="btnAddProcedimento">+ Add</button>
+                                </div>
+                            </div>
+                            <div class="full">
+                                <label>Notes</label>
+                                <textarea id="atdObservacoes" rows="2"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Items (procedures added) -->
+                        <div style="margin-top:1rem; border-top:1px solid #e9edf4; padding-top:1rem;">
+                            <div class="flex items-center gap-2" style="justify-content:space-between; flex-wrap:wrap;">
+                                <h4 style="font-weight:600;">🛒 Items / Services</h4>
+                                <button type="button" class="btn-secondary btn-sm" id="btnAdicionarItemAvulso">+ Add custom item</button>
+                            </div>
+                            <div class="table-wrap" id="itensContainer">
+                                <table>
+                                    <thead><tr><th>Name</th><th>Qty</th><th>Unit Price</th><th>Discount</th><th>Total</th><th>Actions</th></tr></thead>
+                                    <tbody id="itensBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Payments -->
+                        <div style="margin-top:1rem; border-top:1px solid #e9edf4; padding-top:1rem;">
+                            <div class="flex items-center gap-2" style="justify-content:space-between; flex-wrap:wrap;">
+                                <h4 style="font-weight:600;">💰 Payments / Installments</h4>
+                                <button type="button" class="btn-secondary btn-sm" id="btnAdicionarRecebimento">+ Add Payment</button>
+                            </div>
+                            <div class="table-wrap" id="recebimentosContainer">
+                                <table>
+                                    <thead><tr><th>Method</th><th>Flag</th><th>Account</th><th>Amount</th><th>Due Date</th><th>Status</th><th>Actions</th></tr></thead>
+                                    <tbody id="recebimentosBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="form-actions" style="margin-top:1.5rem;">
+                            <button type="submit" class="btn-primary">✅ Register</button>
+                            <button type="reset" class="btn-secondary">Clear</button>
+                        </div>
+                    </form>
+                </div>
+                <div id="atdFeedback" class="card" style="display:none;"></div>
+            </section>
+
+            <!-- ===== PROTOCOLS SECTION ===== -->
+            <section class="section" id="sec-protocolos">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📂 Protocols</h3>
+                        <button class="btn-primary btn-sm" id="btnNovoProtocolo">+ New</button>
+                    </div>
+                    <div id="protocolosContainer"></div>
+                </div>
+            </section>
+
+            <!-- ===== HISTORY SECTION ===== -->
+            <section class="section" id="sec-historico">
+                <div class="card">
+                    <div class="card-header"><h3>📖 Client History</h3></div>
+                    <div class="search-box">
+                        <input type="text" id="histBusca" placeholder="Type client name..." />
+                        <button class="btn-primary btn-sm" id="btnHistBuscar">Search</button>
+                        <button class="btn-secondary btn-sm" id="btnExportarAtendimentos">📊 Export CSV</button>
+                    </div>
+                    <div id="historicoContainer"></div>
+                </div>
+            </section>
+
+            <!-- ===== DASHBOARD SECTION ===== -->
+            <section class="section" id="sec-dashboard">
+                <div class="dash-grid" id="dashGrid"></div>
+                <div class="card">
+                    <div class="card-header"><h3>📊 Top Services</h3></div>
+                    <div id="dashTopProcedimentos" style="padding:0.5rem 0;"></div>
+                </div>
+            </section>
+
+            <!-- ===== BACKUP SECTION ===== -->
+            <section class="section" id="sec-backup">
+                <div class="card">
+                    <div class="card-header"><h3>💾 Backup</h3></div>
+                    <div style="display:flex; gap:0.8rem; flex-wrap:wrap;">
+                        <button class="btn-primary" id="btnExportarJSON">📤 Export JSON</button>
+                        <button class="btn-secondary" id="btnImportarJSON">📥 Import JSON</button>
+                        <input type="file" id="fileInput" accept=".json" style="display:none;" />
+                        <button class="btn-danger" id="btnLimparDados">🗑️ Clear all data</button>
+                    </div>
+                    <p class="text-muted mt-1">Automatic backup is stored in LocalStorage. Export to keep a safety file.</p>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- ===== MODAL ===== -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-box" id="modalBox">
+            <h3 id="modalTitle">Modal</h3>
+            <div id="modalBody"></div>
+            <div class="modal-actions" id="modalActions">
+                <button class="btn-secondary" id="modalCancel">Cancel</button>
+                <button class="btn-primary" id="modalConfirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========================================================================
+        //  DATA LAYER
+        // ========================================================================
+        const STORAGE_KEY = 'flowtasks_data';
+
+        function getDefaultData() {
+            return { clientes: [], procedimentos: [], atendimentos: [], tarefas: [] };
+        }
+
+        function loadData() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return getDefaultData();
+                const data = JSON.parse(raw);
+                if (!data.clientes) data.clientes = [];
+                if (!data.procedimentos) data.procedimentos = [];
+                if (!data.atendimentos) data.atendimentos = [];
+                if (!data.tarefas) data.tarefas = [];
+                data.atendimentos.forEach(a => {
+                    if (!a.horario) a.horario = '';
+                    if (!a.profissional) a.profissional = '';
+                    if (!a.observacoes) a.observacoes = '';
+                    if (!a.itens) a.itens = [];
+                    if (!a.recebimentos) a.recebimentos = [];
+                });
+                return data;
+            } catch { return getDefaultData(); }
+        }
+
+        function saveData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        let DB = loadData();
+
+        function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+        function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+        function addDays(dateStr, days) {
+            const d = new Date(dateStr);
+            d.setDate(d.getDate() + days);
+            return d.toISOString().slice(0, 10);
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr + 'T00:00:00');
+            return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function isToday(dateStr) { return dateStr === todayStr(); }
+
+        function isPast(dateStr) { return dateStr < todayStr(); }
+
+        function getProcedimentoNome(id) {
+            const p = DB.procedimentos.find(x => x.id === id);
+            return p ? p.nome : '(removed)';
+        }
+
+        function getProcedimentoValor(id) {
+            const p = DB.procedimentos.find(x => x.id === id);
+            return p && p.valor ? p.valor : 0;
+        }
+
+        function getAcaoMensagem(procedimentoId, acaoId) {
+            const p = DB.procedimentos.find(x => x.id === procedimentoId);
+            if (!p) return '';
+            const a = p.acoes.find(x => x.id === acaoId);
+            return a ? a.mensagem : '';
+        }
+
+        function getAcaoTitulo(procedimentoId, acaoId) {
+            const p = DB.procedimentos.find(x => x.id === procedimentoId);
+            if (!p) return '';
+            const a = p.acoes.find(x => x.id === acaoId);
+            return a ? a.titulo : '';
+        }
+
+        // ========================================================================
+        //  NAVIGATION
+        // ========================================================================
+        const sections = {
+            tarefas: document.getElementById('sec-tarefas'),
+            proximas: document.getElementById('sec-proximas'),
+            atendimento: document.getElementById('sec-atendimento'),
+            protocolos: document.getElementById('sec-protocolos'),
+            historico: document.getElementById('sec-historico'),
+            dashboard: document.getElementById('sec-dashboard'),
+            backup: document.getElementById('sec-backup')
+        };
+        const navItems = document.querySelectorAll('.nav-item[data-section]');
+        const pageTitle = document.getElementById('pageTitle');
+        const topBadge = document.getElementById('topBadge');
+
+        function navigate(sectionId) {
+            Object.keys(sections).forEach(key => {
+                sections[key].classList.toggle('active', key === sectionId);
+            });
+            navItems.forEach(el => {
+                el.classList.toggle('active', el.dataset.section === sectionId);
+            });
+            const titles = {
+                tarefas: '📌 Tasks',
+                proximas: '📅 Upcoming Tasks',
+                atendimento: '✚ New Appointment',
+                protocolos: '📂 Protocols',
+                historico: '📖 History',
+                dashboard: '📊 Dashboard',
+                backup: '💾 Backup'
+            };
+            pageTitle.textContent = titles[sectionId] || 'FlowTasks';
+            topBadge.textContent = sectionId === 'tarefas' ? 'Smart' : sectionId === 'proximas' ? 'Filters' : '';
+
+            if (sectionId === 'tarefas') renderTarefas('hoje');
+            else if (sectionId === 'proximas') renderProximas('hoje');
+            else if (sectionId === 'atendimento') { populateProcedimentosSelect();
+                updateClientesDatalist(); }
+            else if (sectionId === 'protocolos') renderProtocolos();
+            else if (sectionId === 'dashboard') renderDashboard();
+            else if (sectionId === 'historico') { /* wait search */ }
+        }
+
+        navItems.forEach(el => {
+            el.addEventListener('click', () => navigate(el.dataset.section));
+        });
+
+        // ========================================================================
+        //  RENDER: TASKS (with date filter and checkboxes)
+        // ========================================================================
+        let tarefasFilter = 'hoje';
+        let tarefasDataFiltro = '';
+
+        function renderTarefas(filter) {
+            tarefasFilter = filter || tarefasFilter;
+            document.querySelectorAll('#tarefaFilterTabs .tab').forEach(el => {
+                el.classList.toggle('active', el.dataset.filter === tarefasFilter);
+            });
+
+            const dataFiltro = document.getElementById('tarefaFiltroData').value;
+
+            const container = document.getElementById('tarefasContainer');
+            const hoje = todayStr();
+            let tarefas = [];
+
+            if (tarefasFilter === 'hoje') {
+                tarefas = DB.tarefas.filter(t => t.status === 'pendente' && t.dataVencimento <= hoje);
+                if (dataFiltro) {
+                    tarefas = tarefas.filter(t => t.dataVencimento === dataFiltro);
+                }
+                tarefas.sort((a, b) => a.dataVencimento.localeCompare(b.dataVencimento));
+            } else if (tarefasFilter === 'concluidas') {
+                tarefas = DB.tarefas.filter(t => t.status === 'concluida');
+                if (dataFiltro) {
+                    tarefas = tarefas.filter(t => t.dataVencimento === dataFiltro);
+                }
+                tarefas.sort((a, b) => new Date(b.concluidaEm || b.createdAt) - new Date(a.concluidaEm || a.createdAt))
+                    .slice(0, 50);
+            } else if (tarefasFilter === 'futuras') {
+                tarefas = DB.tarefas.filter(t => t.status === 'pendente' && t.dataVencimento > hoje);
+                if (dataFiltro) {
+                    tarefas = tarefas.filter(t => t.dataVencimento === dataFiltro);
+                }
+                tarefas.sort((a, b) => a.dataVencimento.localeCompare(b.dataVencimento));
+            }
+
+            if (tarefas.length === 0) {
+                container.innerHTML = `
+                    <div class="card"><div class="empty">
+                        <div class="big-icon">📭</div>
+                        <p>${tarefasFilter === 'hoje' ? 'No pending tasks for today.' : 
+                            tarefasFilter === 'concluidas' ? 'No completed tasks yet.' : 
+                            'No future tasks.'}</p>
+                    </div></div>
+                `;
+                return;
+            }
+
+            let html = `<div class="card"><div class="card-header"><h3>${tarefas.length} task(s)</h3></div>`;
+            tarefas.forEach(t => {
+                html += renderTaskItemComCheck(t);
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // ========================================================================
+        //  RENDER: UPCOMING (with checkboxes)
+        // ========================================================================
+        let proximasFilter = 'hoje';
+
+        function renderProximas(filter) {
+            proximasFilter = filter || proximasFilter;
+            document.querySelectorAll('#filterTabs .tab').forEach(el => {
+                el.classList.toggle('active', el.dataset.filter === proximasFilter);
+            });
+
+            const container = document.getElementById('proximasContainer');
+            const hoje = todayStr();
+            let tarefas = DB.tarefas.filter(t => t.status === 'pendente');
+
+            const dataDiv = document.getElementById('proximasFiltroData');
+            if (proximasFilter === 'data') {
+                dataDiv.style.display = 'block';
+                const dataInput = document.getElementById('proximasDataEspecifica');
+                if (dataInput.value) {
+                    tarefas = tarefas.filter(t => t.dataVencimento === dataInput.value);
+                } else {
+                    tarefas = [];
+                }
+            } else {
+                dataDiv.style.display = 'none';
+                if (proximasFilter === 'hoje') {
+                    tarefas = tarefas.filter(t => t.dataVencimento === hoje);
+                } else if (proximasFilter === 'amanha') {
+                    const amanha = addDays(hoje, 1);
+                    tarefas = tarefas.filter(t => t.dataVencimento === amanha);
+                } else if (proximasFilter === '7dias') {
+                    const limite = addDays(hoje, 7);
+                    tarefas = tarefas.filter(t => t.dataVencimento >= hoje && t.dataVencimento <= limite);
+                } else if (proximasFilter === '15dias') {
+                    const limite = addDays(hoje, 15);
+                    tarefas = tarefas.filter(t => t.dataVencimento >= hoje && t.dataVencimento <= limite);
+                } else if (proximasFilter === '30dias') {
+                    const limite = addDays(hoje, 30);
+                    tarefas = tarefas.filter(t => t.dataVencimento >= hoje && t.dataVencimento <= limite);
+                } else if (proximasFilter === 'atrasadas') {
+                    tarefas = tarefas.filter(t => t.dataVencimento < hoje);
+                }
+            }
+
+            tarefas.sort((a, b) => a.dataVencimento.localeCompare(b.dataVencimento));
+
+            if (tarefas.length === 0) {
+                container.innerHTML = `
+                    <div class="card"><div class="empty"><div class="big-icon">📭</div><p>No tasks in this category.</p></div></div>
+                `;
+                return;
+            }
+
+            let html = `<div class="card"><div class="card-header"><h3>📅 ${tarefas.length} task(s)</h3></div>`;
+            tarefas.forEach(t => {
+                html += renderTaskItemComCheck(t);
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // ========================================================================
+        //  RENDER: TASK ITEM WITH CHECKBOX
+        // ========================================================================
+        function renderTaskItemComCheck(t) {
+            const procedNome = getProcedimentoNome(t.procedimentoId);
+            const acaoTit = getAcaoTitulo(t.procedimentoId, t.acaoId);
+            const msg = t.mensagem || getAcaoMensagem(t.procedimentoId, t.acaoId);
+            const isDone = t.status === 'concluida';
+            const dataLabel = formatDate(t.dataVencimento);
+
+            return `
+                <div class="task-item" data-id="${t.id}">
+                    <div class="task-check">
+                        <input type="checkbox" class="task-checkbox" value="${t.id}" />
+                    </div>
+                    <div class="task-info">
+                        <div class="task-title">${t.cliente} — ${acaoTit || t.titulo || 'Action'}</div>
+                        <div class="task-meta">
+                            <span>📋 ${procedNome}</span>
+                            <span>📅 ${dataLabel}</span>
+                            ${isDone ? '<span class="tag done">✅ Done</span>' : ''}
+                            ${isPast(t.dataVencimento) && !isDone ? '<span class="tag" style="background:#fee2e2;color:#dc2626;">⏰ Overdue</span>' : ''}
+                        </div>
+                        ${msg ? `<div class="task-msg">${msg}</div>` : ''}
+                    </div>
+                    <div class="task-actions">
+                        ${!isDone ? `
+                            <button class="btn-copy" onclick="copiarMensagem('${t.id}')">📋 Copy</button>
+                            <button class="btn-done" onclick="concluirTarefa('${t.id}')">✅ Complete</button>
+                            <button class="btn-edit" onclick="editarTarefa('${t.id}')">✏️ Edit</button>
+                        ` : `
+                            <button class="btn-undo" onclick="reabrirTarefa('${t.id}')">↩️ Reopen</button>
+                        `}
+                        <button class="btn-del" onclick="excluirTarefa('${t.id}')">🗑️</button>
+                        <button class="btn-duplicate" onclick="duplicarAtendimento('${t.atendimentoId}')">📋 Duplicate</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ========================================================================
+        //  BULK ACTIONS - TASKS
+        // ========================================================================
+        document.getElementById('selecionarTodosTarefas').addEventListener('click', () => {
+            document.querySelectorAll('#tarefasContainer .task-checkbox').forEach(cb => cb.checked = true);
+        });
+        document.getElementById('desselecionarTodosTarefas').addEventListener('click', () => {
+            document.querySelectorAll('#tarefasContainer .task-checkbox').forEach(cb => cb.checked = false);
+        });
+        document.getElementById('excluirSelecionadosTarefas').addEventListener('click', () => {
+            const ids = [];
+            document.querySelectorAll('#tarefasContainer .task-checkbox:checked').forEach(cb => ids.push(cb.value));
+            if (ids.length === 0) { alert('Select at least one task.'); return; }
+            if (!confirm(`Delete ${ids.length} task(s) permanently?`)) return;
+            DB.tarefas = DB.tarefas.filter(t => !ids.includes(t.id));
+            saveData(DB);
+            refreshCurrentView();
+        });
+
+        document.getElementById('selecionarTodosProximas').addEventListener('click', () => {
+            document.querySelectorAll('#proximasContainer .task-checkbox').forEach(cb => cb.checked = true);
+        });
+        document.getElementById('desselecionarTodosProximas').addEventListener('click', () => {
+            document.querySelectorAll('#proximasContainer .task-checkbox').forEach(cb => cb.checked = false);
+        });
+        document.getElementById('excluirSelecionadosProximas').addEventListener('click', () => {
+            const ids = [];
+            document.querySelectorAll('#proximasContainer .task-checkbox:checked').forEach(cb => ids.push(cb.value));
+            if (ids.length === 0) { alert('Select at least one task.'); return; }
+            if (!confirm(`Delete ${ids.length} task(s) permanently?`)) return;
+            DB.tarefas = DB.tarefas.filter(t => !ids.includes(t.id));
+            saveData(DB);
+            refreshCurrentView();
+        });
+
+        // ========================================================================
+        //  TASK ACTIONS
+        // ========================================================================
+        window.copiarMensagem = function(id) {
+            const tarefa = DB.tarefas.find(t => t.id === id);
+            if (!tarefa) return;
+            const msg = tarefa.mensagem || getAcaoMensagem(tarefa.procedimentoId, tarefa.acaoId) ||
+                'Mensagem não disponível';
+            navigator.clipboard.writeText(msg).then(() => {
+                alert('✅ Mensagem copiada!');
+            }).catch(() => {
+                // Fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = msg;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('✅ Mensagem copiada!');
+            });
+        };
+
+        window.concluirTarefa = function(id) {
+            const tarefa = DB.tarefas.find(t => t.id === id);
+            if (!tarefa) return;
+            tarefa.status = 'concluida';
+            tarefa.concluidaEm = new Date().toISOString();
+            saveData(DB);
+            refreshCurrentView();
+        };
+
+        window.reabrirTarefa = function(id) {
+            const tarefa = DB.tarefas.find(t => t.id === id);
+            if (!tarefa) return;
+            tarefa.status = 'pendente';
+            delete tarefa.concluidaEm;
+            saveData(DB);
+            refreshCurrentView();
+        };
+
+        window.excluirTarefa = function(id) {
+            if (!confirm('Delete this task?')) return;
+            DB.tarefas = DB.tarefas.filter(t => t.id !== id);
+            saveData(DB);
+            refreshCurrentView();
+        };
+
+        window.editarTarefa = function(id) {
+            const tarefa = DB.tarefas.find(t => t.id === id);
+            if (!tarefa) return;
+            showModal(
+                '✏️ Edit Task',
+                `
+                    <div class="form-group"><label>Client</label><input id="editTaskCliente" value="${tarefa.cliente}" /></div>
+                    <div class="form-group"><label>Title</label><input id="editTaskTitulo" value="${tarefa.titulo || ''}" /></div>
+                    <div class="form-group"><label>Message</label><textarea id="editTaskMsg" rows="3">${tarefa.mensagem || ''}</textarea></div>
+                    <div class="form-group"><label>Due date</label><input type="date" id="editTaskData" value="${tarefa.dataVencimento}" /></div>
+                `,
+                () => {
+                    const cliente = document.getElementById('editTaskCliente').value.trim();
+                    const titulo = document.getElementById('editTaskTitulo').value.trim();
+                    const mensagem = document.getElementById('editTaskMsg').value.trim();
+                    const dataVenc = document.getElementById('editTaskData').value;
+                    if (!cliente) { alert('Client name is required.'); return; }
+                    if (!dataVenc) { alert('Due date is required.'); return; }
+                    tarefa.cliente = cliente;
+                    tarefa.titulo = titulo;
+                    tarefa.mensagem = mensagem;
+                    tarefa.dataVencimento = dataVenc;
+                    saveData(DB);
+                    closeModal();
+                    refreshCurrentView();
+                },
+                'Save'
+            );
+        };
+
+        window.duplicarAtendimento = function(atendimentoId) {
+            const atend = DB.atendimentos.find(a => a.id === atendimentoId);
+            if (!atend) { alert('Atendimento não encontrado.'); return; }
+            const novoAtend = {
+                ...atend,
+                id: genId(),
+                data: todayStr(),
+                createdAt: new Date().toISOString(),
+                recebimentos: atend.recebimentos ? atend.recebimentos.map(r => ({ ...r })) : [],
+                itens: atend.itens ? atend.itens.map(i => ({ ...i })) : []
+            };
+            DB.atendimentos.push(novoAtend);
+
+            // Duplicate tasks associated with this appointment
+            const tarefasOriginais = DB.tarefas.filter(t => t.atendimentoId === atendimentoId);
+            tarefasOriginais.forEach(t => {
+                DB.tarefas.push({
+                    ...t,
+                    id: genId(),
+                    atendimentoId: novoAtend.id,
+                    status: 'pendente',
+                    createdAt: new Date().toISOString(),
+                    dataVencimento: todayStr()
+                });
+            });
+
+            saveData(DB);
+            refreshCurrentView();
+            alert('✅ Atendimento duplicado com sucesso!');
+        };
+
+        // ========================================================================
+        //  CLIENTS - REGISTRATION AND DATALIST
+        // ========================================================================
+        function updateClientesDatalist() {
+            const datalist = document.getElementById('clientesList');
+            const clientes = [...new Set(DB.clientes.map(c => c.nome))];
+            // Add client names from appointments as well
+            DB.atendimentos.forEach(a => {
+                if (!clientes.includes(a.cliente)) clientes.push(a.cliente);
+            });
+            datalist.innerHTML = clientes.map(c => `<option value="${c}">`).join('');
+        }
+
+        document.getElementById('btnAddCliente').addEventListener('click', () => {
+            showModal(
+                '👤 New Client',
+                `
+                    <div class="form-group"><label>Name *</label><input id="modalClienteNome" /></div>
+                    <div class="form-group"><label>Phone</label><input id="modalClienteTelefone" /></div>
+                    <div class="form-group"><label>Email</label><input id="modalClienteEmail" /></div>
+                `,
+                () => {
+                    const nome = document.getElementById('modalClienteNome').value.trim();
+                    if (!nome) { alert('Name is required.'); return; }
+                    const telefone = document.getElementById('modalClienteTelefone').value.trim();
+                    const email = document.getElementById('modalClienteEmail').value.trim();
+                    DB.clientes.push({ id: genId(), nome, telefone, email });
+                    saveData(DB);
+                    document.getElementById('atdCliente').value = nome;
+                    updateClientesDatalist();
+                    closeModal();
+                },
+                'Save client'
+            );
+        });
+
+        // ========================================================================
+        //  SERVICES / PROCEDURES - MULTIPLE ITEMS
+        // ========================================================================
+        let itensTemp = [];
+        let recebimentosTemp = [];
+
+        function populateProcedimentosSelect() {
+            const sel = document.getElementById('atdProcedimento');
+            const current = sel.value;
+            sel.innerHTML = '<option value="">Select...</option>';
+            DB.procedimentos.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.nome;
+                sel.appendChild(opt);
+            });
+            if (current && DB.procedimentos.some(p => p.id === current)) {
+                sel.value = current;
+            }
+            document.getElementById('atdData').value = todayStr();
+            document.getElementById('atdHorario').value = '';
+        }
+
+        document.getElementById('btnAddProcedimento').addEventListener('click', () => {
+            const sel = document.getElementById('atdProcedimento');
+            const procId = sel.value;
+            if (!procId) { alert('Select a service.'); return; }
+            const proc = DB.procedimentos.find(p => p.id === procId);
+            if (!proc) return;
+            itensTemp.push({
+                nome: proc.nome,
+                qtd: 1,
+                valorUnit: proc.valor || 0,
+                desconto: 0,
+                procedimentoId: proc.id
+            });
+            renderItensTabela();
+        });
+
+        document.getElementById('btnAdicionarItemAvulso').addEventListener('click', () => {
+            showModal(
+                '🛒 Add Custom Item',
+                `
+                    <div class="form-group"><label>Name</label><input id="modalItemAvulsoNome" /></div>
+                    <div class="form-group"><label>Quantity</label><input type="number" id="modalItemAvulsoQtd" value="1" min="1" step="1" /></div>
+                    <div class="form-group"><label>Unit price (R$)</label><input type="number" id="modalItemAvulsoValor" value="0" step="0.01" /></div>
+                    <div class="form-group"><label>Unit discount (R$)</label><input type="number" id="modalItemAvulsoDesconto" value="0" step="0.01" /></div>
+                `,
+                () => {
+                    const nome = document.getElementById('modalItemAvulsoNome').value.trim();
+                    const qtd = parseInt(document.getElementById('modalItemAvulsoQtd').value) || 1;
+                    const valorUnit = parseFloat(document.getElementById('modalItemAvulsoValor').value) || 0;
+                    const desconto = parseFloat(document.getElementById('modalItemAvulsoDesconto').value) || 0;
+                    if (!nome) { alert('Enter the item name.'); return; }
+                    itensTemp.push({ nome, qtd, valorUnit, desconto, procedimentoId: null });
+                    renderItensTabela();
+                    closeModal();
+                },
+                'Add'
+            );
+        });
+
+        function renderItensTabela() {
+            const tbody = document.getElementById('itensBody');
+            if (itensTemp.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-muted" style="text-align:center;">No items added.</td></tr>`;
+                return;
+            }
+            let html = '';
+            itensTemp.forEach((item, idx) => {
+                const total = (item.qtd * item.valorUnit) - item.desconto;
+                const isProcedimento = item.procedimentoId ? '📌 ' : '';
+                html += `
+                    <tr>
+                        <td>${isProcedimento}${item.nome}</td>
+                        <td><input type="number" value="${item.qtd}" min="1" step="1" style="width:60px;" data-idx="${idx}" class="item-qtd" /></td>
+                        <td><input type="number" value="${item.valorUnit.toFixed(2)}" step="0.01" style="width:80px;" data-idx="${idx}" class="item-valor" /></td>
+                        <td><input type="number" value="${item.desconto.toFixed(2)}" step="0.01" style="width:80px;" data-idx="${idx}" class="item-desconto" /></td>
+                        <td>${total.toFixed(2)}</td>
+                        <td><button class="btn-danger btn-sm" onclick="removerItemTemp(${idx})">✕</button></td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+
+            // Live update events
+            tbody.querySelectorAll('.item-qtd').forEach(el => {
+                el.addEventListener('input', function() {
+                    const idx = parseInt(this.dataset.idx);
+                    if (!isNaN(idx) && itensTemp[idx]) {
+                        itensTemp[idx].qtd = parseInt(this.value) || 1;
+                        renderItensTabela();
+                    }
+                });
+            });
+            tbody.querySelectorAll('.item-valor').forEach(el => {
+                el.addEventListener('input', function() {
+                    const idx = parseInt(this.dataset.idx);
+                    if (!isNaN(idx) && itensTemp[idx]) {
+                        itensTemp[idx].valorUnit = parseFloat(this.value) || 0;
+                        renderItensTabela();
+                    }
+                });
+            });
+            tbody.querySelectorAll('.item-desconto').forEach(el => {
+                el.addEventListener('input', function() {
+                    const idx = parseInt(this.dataset.idx);
+                    if (!isNaN(idx) && itensTemp[idx]) {
+                        itensTemp[idx].desconto = parseFloat(this.value) || 0;
+                        renderItensTabela();
+                    }
+                });
+            });
+        }
+
+        window.removerItemTemp = function(idx) {
+            itensTemp.splice(idx, 1);
+            renderItensTabela();
+        };
+
+        // ========================================================================
+        //  PAYMENTS (with credit card flag)
+        // ========================================================================
+        function renderRecebimentosTabela() {
+            const tbody = document.getElementById('recebimentosBody');
+            if (recebimentosTemp.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-muted" style="text-align:center;">No payments added.</td></tr>`;
+                return;
+            }
+            let html = '';
+            recebimentosTemp.forEach((rec, idx) => {
+                const bandeira = rec.metodo === 'Cartão' ? rec.bandeira || '' : '-';
+                html += `
+                    <tr>
+                        <td>${rec.metodo}</td>
+                        <td>${bandeira}</td>
+                        <td>${rec.conta}</td>
+                        <td>${rec.valor.toFixed(2)}</td>
+                        <td>${formatDate(rec.vencimento)}</td>
+                        <td>${rec.situacao}</td>
+                        <td><button class="btn-danger btn-sm" onclick="removerRecebimentoTemp(${idx})">✕</button></td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        window.removerRecebimentoTemp = function(idx) {
+            recebimentosTemp.splice(idx, 1);
+            renderRecebimentosTabela();
+        };
+
+        document.getElementById('btnAdicionarRecebimento').addEventListener('click', () => {
+            showModal(
+                '💰 Add Payment',
+                `
+                    <div class="form-group"><label>Method</label>
+                        <select id="modalRecMetodo">
+                            <option value="Credit Card">Credit Card</option>
+                            <option value="Pix">Pix</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Boleto">Boleto</option>
+                            <option value="Transfer">Transfer</option>
+                            <option value="Deposit">Deposit</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="modalRecBandeiraGroup" style="display:none;">
+                        <label>Card Flag</label>
+                        <select id="modalRecBandeira">
+                            <option value="Mastercard">Mastercard</option>
+                            <option value="Visa">Visa</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Account</label>
+                        <select id="modalRecConta">
+                            <option value="Default Bank">Default Bank</option>
+                            <option value="Payment Gateway">Payment Gateway</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Amount (R$)</label><input type="number" id="modalRecValor" step="0.01" /></div>
+                    <div class="form-group"><label>Due date</label><input type="date" id="modalRecVencimento" /></div>
+                    <div class="form-group"><label>Status</label>
+                        <select id="modalRecSituacao">
+                            <option value="Paid">Paid</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Overdue">Overdue</option>
+                        </select>
+                    </div>
+                `,
+                () => {
+                    const metodo = document.getElementById('modalRecMetodo').value;
+                    const bandeira = document.getElementById('modalRecBandeira') ? document.getElementById('modalRecBandeira')
+                        .value : '';
+                    const conta = document.getElementById('modalRecConta').value;
+                    const valor = parseFloat(document.getElementById('modalRecValor').value);
+                    const vencimento = document.getElementById('modalRecVencimento').value;
+                    const situacao = document.getElementById('modalRecSituacao').value;
+                    if (!valor || valor <= 0) { alert('Enter a valid amount.'); return; }
+                    if (!vencimento) { alert('Enter the due date.'); return; }
+                    recebimentosTemp.push({
+                        metodo,
+                        bandeira: metodo === 'Credit Card' ? bandeira : '',
+                        conta,
+                        valor,
+                        vencimento,
+                        situacao
+                    });
+                    renderRecebimentosTabela();
+                    closeModal();
+                },
+                'Add'
+            );
+
+            document.getElementById('modalRecMetodo').addEventListener('change', function() {
+                const show = this.value === 'Credit Card';
+                document.getElementById('modalRecBandeiraGroup').style.display = show ? 'block' : 'none';
+            });
+            setTimeout(() => {
+                const metodoEl = document.getElementById('modalRecMetodo');
+                if (metodoEl) {
+                    const show = metodoEl.value === 'Credit Card';
+                    document.getElementById('modalRecBandeiraGroup').style.display = show ? 'block' : 'none';
+                }
+            }, 100);
+        });
+
+        // ========================================================================
+        //  SUBMIT APPOINTMENT (with multiple services)
+        // ========================================================================
+        document.getElementById('formAtendimento').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const cliente = document.getElementById('atdCliente').value.trim();
+            const telefone = document.getElementById('atdTelefone').value.trim();
+            const profissional = document.getElementById('atdProfissional').value.trim();
+            const data = document.getElementById('atdData').value;
+            const horario = document.getElementById('atdHorario').value;
+            const observacoes = document.getElementById('atdObservacoes').value.trim();
+
+            if (!cliente) { alert('❌ Please fill in the client name.'); return; }
+            if (!data) { alert('❌ Please fill in the appointment date.'); return; }
+            if (itensTemp.length === 0) { alert('❌ Add at least one service/item.'); return; }
+
+            const itensComProcedimento = itensTemp.filter(item => item.procedimentoId);
+
+            let totalItens = 0;
+            itensTemp.forEach(item => {
+                totalItens += (item.qtd * item.valorUnit) - item.desconto;
+            });
+
+            const atend = {
+                id: genId(),
+                cliente,
+                telefone,
+                profissional,
+                data,
+                horario,
+                observacoes,
+                itens: itensTemp.map(item => ({ ...item })),
+                recebimentos: recebimentosTemp.map(rec => ({ ...rec })),
+                total: totalItens,
+                createdAt: new Date().toISOString()
+            };
+            DB.atendimentos.push(atend);
+
+            let tarefasCriadas = 0;
+            itensComProcedimento.forEach(item => {
+                const proced = DB.procedimentos.find(p => p.id === item.procedimentoId);
+                if (proced && proced.acoes) {
+                    proced.acoes.forEach(acao => {
+                        const dataVenc = addDays(data, acao.diasApos || 0);
+                        DB.tarefas.push({
+                            id: genId(),
+                            atendimentoId: atend.id,
+                            procedimentoId: proced.id,
+                            acaoId: acao.id,
+                            cliente: cliente,
+                            titulo: acao.titulo || '',
+                            mensagem: acao.mensagem || '',
+                            dataVencimento: dataVenc,
+                            status: 'pendente',
+                            createdAt: new Date().toISOString()
+                        });
+                        tarefasCriadas++;
+                    });
+                } else if (proced) {
+                    DB.tarefas.push({
+                        id: genId(),
+                        atendimentoId: atend.id,
+                        procedimentoId: proced.id,
+                        acaoId: 'gen',
+                        cliente: cliente,
+                        titulo: 'Follow-up',
+                        mensagem: '',
+                        dataVencimento: data,
+                        status: 'pendente',
+                        createdAt: new Date().toISOString()
+                    });
+                    tarefasCriadas++;
+                }
+            });
+
+            saveData(DB);
+
+            const fb = document.getElementById('atdFeedback');
+            fb.style.display = 'block';
+            fb.innerHTML = `
+                <div style="color:#16a34a;font-weight:600;">✅ Appointment registered successfully!</div>
+                <p class="text-muted">${tarefasCriadas} task(s) generated. Total: R$ ${totalItens.toFixed(2)}</p>
+                <button class="btn-primary btn-sm mt-1" onclick="document.getElementById('atdFeedback').style.display='none';">OK</button>
+            `;
+
+            // Reset form
+            document.getElementById('atdCliente').value = '';
+            document.getElementById('atdTelefone').value = '';
+            document.getElementById('atdProfissional').value = '';
+            document.getElementById('atdObservacoes').value = '';
+            document.getElementById('atdData').value = todayStr();
+            document.getElementById('atdHorario').value = '';
+            itensTemp = [];
+            recebimentosTemp = [];
+            renderItensTabela();
+            renderRecebimentosTabela();
+            populateProcedimentosSelect();
+            updateClientesDatalist();
+
+            refreshCurrentView();
+        });
+
+        // ========================================================================
+        //  IMPORT SCHEDULE (.txt)
+        // ========================================================================
+        document.getElementById('btnImportarAgenda').addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.txt';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    try {
+                        const text = ev.target.result;
+                        const lines = text.split('\n').filter(line => line.trim() !== '');
+                        let imported = 0;
+                        let errors = 0;
+                        lines.forEach(line => {
+                            // Format: "Name | Service1, Service2 | Time"
+                            const parts = line.split('|').map(s => s.trim());
+                            if (parts.length < 2) { errors++; return; }
+                            const nome = parts[0];
+                            const servicesRaw = parts[1];
+                            const horario = parts[2] ? parts[2].trim() : '';
+                            const services = servicesRaw.split(',').map(s => s.trim()).filter(s => s);
+                            if (!nome || services.length === 0) { errors++; return; }
+
+                            const items = [];
+                            services.forEach(procNome => {
+                                let proc = DB.procedimentos.find(p => p.nome.toLowerCase() === procNome
+                                .toLowerCase());
+                                if (proc) {
+                                    items.push({
+                                        nome: proc.nome,
+                                        qtd: 1,
+                                        valorUnit: proc.valor || 0,
+                                        desconto: 0,
+                                        procedimentoId: proc.id
+                                    });
+                                } else {
+                                    items.push({
+                                        nome: procNome,
+                                        qtd: 1,
+                                        valorUnit: 0,
+                                        desconto: 0,
+                                        procedimentoId: null
+                                    });
+                                }
+                            });
+
+                            const data = todayStr();
+                            const atend = {
+                                id: genId(),
+                                cliente: nome,
+                                telefone: '',
+                                profissional: '',
+                                data: data,
+                                horario: horario,
+                                observacoes: 'Imported',
+                                itens: items,
+                                recebimentos: [],
+                                total: items.reduce((s, i) => s + (i.qtd * i.valorUnit) - i.desconto, 0),
+                                createdAt: new Date().toISOString()
+                            };
+                            DB.atendimentos.push(atend);
+
+                            items.forEach(item => {
+                                if (item.procedimentoId) {
+                                    const proced = DB.procedimentos.find(p => p.id === item.procedimentoId);
+                                    if (proced && proced.acoes) {
+                                        proced.acoes.forEach(acao => {
+                                            const dataVenc = addDays(data, acao.diasApos ||
+                                            0);
+                                            DB.tarefas.push({
+                                                id: genId(),
+                                                atendimentoId: atend.id,
+                                                procedimentoId: proced.id,
+                                                acaoId: acao.id,
+                                                cliente: nome,
+                                                titulo: acao.titulo || '',
+                                                mensagem: acao.mensagem || '',
+                                                dataVencimento: dataVenc,
+                                                status: 'pendente',
+                                                createdAt: new Date()
+                                                    .toISOString()
+                                            });
+                                        });
+                                    } else if (proced) {
+                                        DB.tarefas.push({
+                                            id: genId(),
+                                            atendimentoId: atend.id,
+                                            procedimentoId: proced.id,
+                                            acaoId: 'gen',
+                                            cliente: nome,
+                                            titulo: 'Follow-up',
+                                            mensagem: '',
+                                            dataVencimento: data,
+                                            status: 'pendente',
+                                            createdAt: new Date()
+                                                .toISOString()
+                                        });
+                                    }
+                                }
+                            });
+                            imported++;
+                        });
+                        saveData(DB);
+                        alert(`✅ ${imported} appointments imported. ${errors} errors.`);
+                        refreshCurrentView();
+                        updateClientesDatalist();
+                    } catch (err) {
+                        alert('Error importing: ' + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        });
+
+        // ========================================================================
+        //  PROTOCOLS
+        // ========================================================================
+        function renderProtocolos() {
+            const container = document.getElementById('protocolosContainer');
+            if (DB.procedimentos.length === 0) {
+                container.innerHTML = `
+                    <div class="empty"><div class="big-icon">📂</div><p>No protocols registered.</p>
+                    <button class="btn-primary btn-sm mt-1" id="btnNovoProtocoloEmpty">+ Create Protocol</button></div>
+                `;
+                document.getElementById('btnNovoProtocoloEmpty')?.addEventListener('click', () => abrirModalProtocolo(null));
+                return;
+            }
+
+            let html = '';
+            DB.procedimentos.forEach(p => {
+                const acoesHtml = p.acoes && p.acoes.length > 0 ?
+                    p.acoes.map(a =>
+                        `<span class="acao-tag">📌 ${a.titulo || 'Action'} <span class="dias">${a.diasApos >= 0 ? '+' : ''}${a.diasApos}d</span></span>`
+                    ).join(' ') :
+                    '<span class="text-muted">No actions</span>';
+
+                html += `
+                    <div class="protocol-item">
+                        <div class="p-header">
+                            <span class="p-name">
+                                <span class="color-dot" style="background:${p.cor || '#7c3aed'};"></span>
+                                ${p.nome}
+                            </span>
+                            <span class="p-badge">${p.categoria || 'General'} ${p.icone || '📋'}</span>
+                        </div>
+                        <div class="p-actions">${acoesHtml}</div>
+                        <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+                            <button class="btn-secondary btn-sm" onclick="editarProtocolo('${p.id}')">✏️ Edit</button>
+                            <button class="btn-danger btn-sm" onclick="excluirProtocolo('${p.id}')">🗑️ Delete</button>
+                            <button class="btn-secondary btn-sm" onclick="duplicarProtocolo('${p.id}')">📋 Duplicate</button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function abrirModalProtocolo(protocoloId) {
+            const isEdit = !!protocoloId;
+            const p = isEdit ? DB.procedimentos.find(x => x.id === protocoloId) : null;
+            const title = isEdit ? '✏️ Edit Protocol' : '📂 New Protocol';
+
+            let acoesHtml = '';
+            const acoes = p ? p.acoes : [];
+            if (acoes.length === 0) {
+                acoesHtml = `<p class="text-muted">No actions registered.</p>`;
+            } else {
+                acoes.forEach((a, idx) => {
+                    acoesHtml += `
+                        <div style="border:1px solid #e9edf4;border-radius:8px;padding:0.6rem;margin-bottom:0.5rem;background:#fafcff;">
+                            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                                <input type="number" placeholder="Days" value="${a.diasApos}" style="width:80px;" data-idx="${idx}" class="acao-dias" />
+                                <input type="text" placeholder="Title" value="${a.titulo || ''}" style="flex:1;min-width:120px;" data-idx="${idx}" class="acao-titulo" />
+                                <button class="btn-danger btn-sm" onclick="removerAcaoModal(${idx})">✕</button>
+                            </div>
+                            <textarea placeholder="Message" rows="2" style="margin-top:4px;" data-idx="${idx}" class="acao-msg">${(a.mensagem || '').replace(/"/g, '&quot;')}</textarea>
+                        </div>
+                    `;
+                });
+            }
+
+            const body = `
+                <div class="form-group"><label>Name *</label><input id="modalProtoNome" value="${p ? p.nome : ''}" /></div>
+                <div class="form-group"><label>Category</label><input id="modalProtoCategoria" value="${p ? p.categoria : ''}" /></div>
+                <div class="form-group"><label>Color</label><input type="color" id="modalProtoCor" value="${p ? p.cor : '#7c3aed'}" /></div>
+                <div class="form-group"><label>Icon (emoji)</label><input id="modalProtoIcone" value="${p ? p.icone : '📋'}" maxlength="4" /></div>
+                <hr style="margin:0.8rem 0;border-color:#e9edf4;" />
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <strong>Automatic Actions</strong>
+                    <button class="btn-secondary btn-sm" id="btnAddAcaoModal">+ Add Action</button>
+                </div>
+                <div id="modalAcoesContainer" style="margin-top:0.5rem;">${acoesHtml}</div>
+            `;
+
+            showModal(title, body, () => {
+                const nome = document.getElementById('modalProtoNome').value.trim();
+                if (!nome) { alert('Protocol name is required.'); return; }
+                const categoria = document.getElementById('modalProtoCategoria').value.trim();
+                const cor = document.getElementById('modalProtoCor').value;
+                const icone = document.getElementById('modalProtoIcone').value.trim() || '📋';
+
+                const acoesColetadas = [];
+                const diasInputs = document.querySelectorAll('.acao-dias');
+                const tituloInputs = document.querySelectorAll('.acao-titulo');
+                const msgInputs = document.querySelectorAll('.acao-msg');
+                const count = diasInputs.length;
+                for (let i = 0; i < count; i++) {
+                    const dias = parseInt(diasInputs[i].value) || 0;
+                    const titulo = tituloInputs[i].value.trim() || 'Action';
+                    const mensagem = msgInputs[i].value.trim() || '';
+                    acoesColetadas.push({ id: genId(), diasApos: dias, titulo, mensagem, tipo: 'Message' });
+                }
+
+                if (isEdit) {
+                    const existing = DB.procedimentos.find(x => x.id === protocoloId);
+                    if (existing) {
+                        existing.nome = nome;
+                        existing.categoria = categoria;
+                        existing.cor = cor;
+                        existing.icone = icone;
+                        existing.acoes = acoesColetadas;
+                    }
+                } else {
+                    DB.procedimentos.push({
+                        id: genId(),
+                        nome,
+                        categoria,
+                        cor,
+                        icone,
+                        acoes: acoesColetadas
+                    });
+                }
+                saveData(DB);
+                closeModal();
+                renderProtocolos();
+                populateProcedimentosSelect();
+                refreshCurrentView();
+            }, 'Save');
+        }
+
+        window.removerAcaoModal = function(idx) {
+            const container = document.getElementById('modalAcoesContainer');
+            const children = container.children;
+            let target = null;
+            let count = 0;
+            for (let child of children) {
+                if (child.tagName === 'DIV') {
+                    if (count === idx) { target = child; break; }
+                    count++;
+                }
+            }
+            if (target) target.remove();
+            reindexAcoesModal();
+        };
+
+        function reindexAcoesModal() {
+            const container = document.getElementById('modalAcoesContainer');
+            const divs = container.querySelectorAll('div[style*="border"]');
+            divs.forEach((div, i) => {
+                const inputs = div.querySelectorAll('input, textarea');
+                inputs.forEach(inp => {
+                    if (inp.classList.contains('acao-dias') || inp.classList.contains('acao-titulo') || inp.classList
+                        .contains('acao-msg')) {
+                        inp.dataset.idx = i;
+                    }
+                });
+                const btn = div.querySelector('.btn-danger');
+                if (btn) {
+                    btn.onclick = () => window.removerAcaoModal(i);
+                }
+            });
+        }
+
+        document.getElementById('btnNovoProtocolo').addEventListener('click', () => abrirModalProtocolo(null));
+
+        document.addEventListener('click', function(e) {
+            if (e.target.id === 'btnAddAcaoModal') {
+                const container = document.getElementById('modalAcoesContainer');
+                const idx = container.querySelectorAll('div[style*="border"]').length;
+                const div = document.createElement('div');
+                div.style.cssText =
+                    'border:1px solid #e9edf4;border-radius:8px;padding:0.6rem;margin-bottom:0.5rem;background:#fafcff;';
+                div.innerHTML = `
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                        <input type="number" placeholder="Days" value="0" style="width:80px;" data-idx="${idx}" class="acao-dias" />
+                        <input type="text" placeholder="Title" value="Action" style="flex:1;min-width:120px;" data-idx="${idx}" class="acao-titulo" />
+                        <button class="btn-danger btn-sm" onclick="window.removerAcaoModal(${idx})">✕</button>
+                    </div>
+                    <textarea placeholder="Message" rows="2" style="margin-top:4px;" data-idx="${idx}" class="acao-msg"></textarea>
+                `;
+                container.appendChild(div);
+                reindexAcoesModal();
+            }
+        });
+
+        window.editarProtocolo = function(id) { abrirModalProtocolo(id); };
+
+        window.excluirProtocolo = function(id) {
+            if (!confirm('Delete this protocol? Associated tasks will remain but the link will be lost.')) return;
+            DB.procedimentos = DB.procedimentos.filter(p => p.id !== id);
+            saveData(DB);
+            renderProtocolos();
+            populateProcedimentosSelect();
+            refreshCurrentView();
+        };
+
+        window.duplicarProtocolo = function(id) {
+            const original = DB.procedimentos.find(p => p.id === id);
+            if (!original) return;
+            const novo = {
+                ...original,
+                id: genId(),
+                nome: original.nome + ' (copy)',
+                acoes: original.acoes.map(a => ({ ...a, id: genId() }))
+            };
+            DB.procedimentos.push(novo);
+            saveData(DB);
+            renderProtocolos();
+            populateProcedimentosSelect();
+        };
+
+        // ========================================================================
+        //  HISTORY
+        // ========================================================================
+        document.getElementById('btnHistBuscar').addEventListener('click', () => {
+            const termo = document.getElementById('histBusca').value.trim().toLowerCase();
+            if (!termo) { alert('Type the client name.'); return; }
+            const container = document.getElementById('historicoContainer');
+
+            const atendimentos = DB.atendimentos.filter(a => a.cliente.toLowerCase().includes(termo));
+            if (atendimentos.length === 0) {
+                container.innerHTML = `<div class="card"><div class="empty"><p>No appointments found for "${termo}".</p></div></div>`;
+                return;
+            }
+
+            let html = '';
+            atendimentos.forEach(atend => {
+                const procNome = atend.itens && atend.itens.length > 0 ? atend.itens.map(i => i.nome).join(', ') :
+                    'N/A';
+                const tarefas = DB.tarefas.filter(t => t.atendimentoId === atend.id);
+                const concluidas = tarefas.filter(t => t.status === 'concluida');
+                const pendentes = tarefas.filter(t => t.status === 'pendente');
+                const totalItens = atend.itens ? atend.itens.reduce((s, i) => s + (i.qtd * i.valorUnit) - i.desconto, 0) :
+                    0;
+                const totalRecebido = atend.recebimentos ? atend.recebimentos.filter(r => r.situacao === 'Paid').reduce((s,
+                    r) => s + r.valor, 0) : 0;
+
+                html += `
+                    <div class="card" style="border-left:4px solid #7c3aed;">
+                        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+                            <div><strong>${atend.cliente}</strong> — ${procNome}</div>
+                            <span class="text-muted">📅 ${formatDate(atend.data)} ${atend.horario ? '⏰ '+atend.horario : ''}</span>
+                        </div>
+                        ${atend.profissional ? `<div style="font-size:0.9rem;color:#475569;">👤 Professional: ${atend.profissional}</div>` : ''}
+                        ${atend.observacoes ? `<div style="font-size:0.9rem;color:#334155;background:#f8fafc;padding:0.3rem 0.6rem;border-radius:6px;margin-top:4px;">${atend.observacoes}</div>` : ''}
+                        <div style="margin-top:6px;display:flex;gap:1rem;flex-wrap:wrap;font-size:0.9rem;">
+                            <span>💰 Total: R$ ${totalItens.toFixed(2)}</span>
+                            <span>💳 Received: R$ ${totalRecebido.toFixed(2)}</span>
+                            <span>📋 Tasks: ${concluidas.length}✅ / ${pendentes.length}⏳</span>
+                        </div>
+                        ${atend.itens && atend.itens.length > 0 ? `
+                            <div style="margin-top:6px;font-size:0.85rem;">
+                                <strong>Items:</strong> ${atend.itens.map(i => `${i.qtd}x ${i.nome}`).join('; ')}
+                            </div>
+                        ` : ''}
+                        ${atend.recebimentos && atend.recebimentos.length > 0 ? `
+                            <div style="margin-top:6px;font-size:0.85rem;color:#475569;">
+                                <strong>Payments:</strong> ${atend.recebimentos.map(r => `${r.metodo}${r.bandeira ? ' ('+r.bandeira+')' : ''} R$ ${r.valor.toFixed(2)} (${r.situacao})`).join('; ')}
+                            </div>
+                        ` : ''}
+                        <div style="margin-top:8px;display:flex;gap:6px;">
+                            <button class="btn-secondary btn-sm" onclick="duplicarAtendimento('${atend.id}')">📋 Duplicate</button>
+                            <button class="btn-danger btn-sm" onclick="excluirAtendimento('${atend.id}')">🗑️ Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        });
+
+        window.excluirAtendimento = function(id) {
+            if (!confirm('Delete this appointment and all its tasks?')) return;
+            DB.atendimentos = DB.atendimentos.filter(a => a.id !== id);
+            DB.tarefas = DB.tarefas.filter(t => t.atendimentoId !== id);
+            saveData(DB);
+            document.getElementById('btnHistBuscar').click();
+            refreshCurrentView();
+        };
+
+        // ========================================================================
+        //  EXPORT APPOINTMENTS (CSV)
+        // ========================================================================
+        document.getElementById('btnExportarAtendimentos').addEventListener('click', () => {
+            showModalExportarAtendimentos();
+        });
+
+        function showModalExportarAtendimentos() {
+            const body = `
+                <div class="form-group">
+                    <label>Period</label>
+                    <select id="exportPeriodo">
+                        <option value="hoje">Today</option>
+                        <option value="periodo">Custom period</option>
+                    </select>
+                </div>
+                <div id="exportPeriodoCampos" style="display:none;">
+                    <div class="form-group">
+                        <label>Start date</label>
+                        <input type="date" id="exportDataInicio" value="${todayStr()}" />
+                    </div>
+                    <div class="form-group">
+                        <label>End date</label>
+                        <input type="date" id="exportDataFim" value="${todayStr()}" />
+                    </div>
+                </div>
+            `;
+            showModal('📊 Export Appointments', body, () => {
+                const periodo = document.getElementById('exportPeriodo').value;
+                let inicio, fim;
+                if (periodo === 'hoje') {
+                    inicio = fim = todayStr();
+                } else {
+                    inicio = document.getElementById('exportDataInicio').value;
+                    fim = document.getElementById('exportDataFim').value;
+                    if (!inicio || !fim) { alert('Select the dates.'); return; }
+                    if (inicio > fim) { alert('Start date cannot be after end date.'); return; }
+                }
+                exportarCSV(inicio, fim);
+                closeModal();
+            }, 'Export');
+            document.getElementById('exportPeriodo').addEventListener('change', function() {
+                const show = this.value === 'periodo';
+                document.getElementById('exportPeriodoCampos').style.display = show ? 'block' : 'none';
+            });
+        }
+
+        function exportarCSV(dataInicio, dataFim) {
+            const atendimentos = DB.atendimentos.filter(a => a.data >= dataInicio && a.data <= dataFim);
+            if (atendimentos.length === 0) {
+                alert('No appointments found in this period.');
+                return;
+            }
+
+            let csv =
+                'Client,Phone,Professional,Date,Time,Services,Total,Notes,Items,Payments\n';
+            atendimentos.forEach(atend => {
+                const procNomes = atend.itens ? atend.itens.map(i => i.nome).join('; ') : '';
+                const total = atend.itens ? atend.itens.reduce((s, i) => s + (i.qtd * i.valorUnit) - i.desconto, 0) :
+                    0;
+                const itensStr = atend.itens ? atend.itens.map(i => `${i.qtd}x ${i.nome}`).join('; ') : '';
+                const recStr = atend.recebimentos ? atend.recebimentos.map(r =>
+                    `${r.metodo}${r.bandeira ? ' '+r.bandeira : ''} R$ ${r.valor.toFixed(2)} (${r.situacao})`).join('; ') :
+                    '';
+                csv +=
+                    `"${atend.cliente}","${atend.telefone || ''}","${atend.profissional || ''}","${atend.data}","${atend.horario || ''}","${procNomes}","${total.toFixed(2)}","${atend.observacoes || ''}","${itensStr}","${recStr}"\n`;
+            });
+
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.download = `appointments_${dataInicio}_to_${dataFim}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ========================================================================
+        //  DASHBOARD
+        // ========================================================================
+        function renderDashboard() {
+            const hoje = todayStr();
+            const mesAtual = hoje.slice(0, 7);
+
+            const atendimentosHoje = DB.atendimentos.filter(a => a.data === hoje);
+            const tarefasHoje = DB.tarefas.filter(t => t.dataVencimento === hoje && t.status === 'pendente');
+            const tarefasAtrasadas = DB.tarefas.filter(t => t.dataVencimento < hoje && t.status === 'pendente');
+            const atendimentosMes = DB.atendimentos.filter(a => a.data.startsWith(mesAtual));
+
+            const procCount = {};
+            DB.atendimentos.forEach(a => {
+                if (a.itens) {
+                    a.itens.forEach(item => {
+                        if (item.procedimentoId) {
+                            procCount[item.procedimentoId] = (procCount[item.procedimentoId] || 0) + 1;
+                        }
+                    });
+                }
+            });
+            const sorted = Object.entries(procCount).sort((a, b) => b[1] - a[1]);
+            const topProcs = sorted.slice(0, 5);
+
+            const grid = document.getElementById('dashGrid');
+            grid.innerHTML = `
+                <div class="dash-card"><span class="dash-icon">📌</span><div class="num">${atendimentosHoje.length}</div><div class="label">Appointments today</div></div>
+                <div class="dash-card"><span class="dash-icon">⏳</span><div class="num">${tarefasHoje.length}</div><div class="label">Tasks for today</div></div>
+                <div class="dash-card"><span class="dash-icon">⚠️</span><div class="num">${tarefasAtrasadas.length}</div><div class="label">Overdue tasks</div></div>
+                <div class="dash-card"><span class="dash-icon">👤</span><div class="num">${atendimentosMes.length}</div><div class="label">Clients this month</div></div>
+            `;
+
+            const procContainer = document.getElementById('dashTopProcedimentos');
+            if (topProcs.length === 0) {
+                procContainer.innerHTML = '<p class="text-muted">No services performed yet.</p>';
+            } else {
+                procContainer.innerHTML = topProcs.map(([procId, count]) => {
+                    const nome = getProcedimentoNome(procId);
+                    const nomeExibicao = nome === '(removed)' ? 'Removed service' : nome;
+                    return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f1f5f9;">
+                                <span>${nomeExibicao}</span>
+                                <span style="font-weight:600;">${count} ×</span>
+                            </div>`;
+                }).join('');
+            }
+        }
+
+        // ========================================================================
+        //  BACKUP
+        // ========================================================================
+        document.getElementById('btnExportarJSON').addEventListener('click', () => {
+            const json = JSON.stringify(DB, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `flowtasks_backup_${todayStr()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        document.getElementById('btnImportarJSON').addEventListener('click', () => {
+            document.getElementById('fileInput').click();
+        });
+
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const imported = JSON.parse(ev.target.result);
+                    if (!imported.clientes || !imported.procedimentos || !imported.atendimentos || !imported.tarefas) {
+                        alert('Invalid file. Make sure it is a valid backup.');
+                        return;
+                    }
+                    if (!confirm('This will replace all current data. Continue?')) return;
+                    DB = imported;
+                    saveData(DB);
+                    alert('✅ Backup imported successfully!');
+                    refreshCurrentView();
+                    populateProcedimentosSelect();
+                    updateClientesDatalist();
+                } catch {
+                    alert('❌ Error reading JSON file.');
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        });
+
+        document.getElementById('btnLimparDados').addEventListener('click', () => {
+            if (!confirm('⚠️ This will delete ALL data. Are you sure?')) return;
+            if (!confirm('Last chance: do you really want to erase everything?')) return;
+            DB = getDefaultData();
+            saveData(DB);
+            alert('Data cleared.');
+            refreshCurrentView();
+            populateProcedimentosSelect();
+            updateClientesDatalist();
+        });
+
+        // ========================================================================
+        //  GENERIC MODAL
+        // ========================================================================
+        let modalCallback = null;
+
+        function showModal(title, bodyHtml, onConfirm, confirmLabel = 'Confirm') {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalBody').innerHTML = bodyHtml;
+            document.getElementById('modalConfirm').textContent = confirmLabel;
+            document.getElementById('modalOverlay').classList.add('open');
+            modalCallback = onConfirm;
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('open');
+            modalCallback = null;
+        }
+
+        document.getElementById('modalCancel').addEventListener('click', closeModal);
+        document.getElementById('modalConfirm').addEventListener('click', () => {
+            if (modalCallback) modalCallback();
+        });
+        document.getElementById('modalOverlay').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeModal();
+        });
+
+        // ========================================================================
+        //  REFRESH CURRENT VIEW
+        // ========================================================================
+        function refreshCurrentView() {
+            const active = document.querySelector('.section.active');
+            if (!active) return;
+            const id = active.id.replace('sec-', '');
+            if (id === 'tarefas') renderTarefas(tarefasFilter);
+            else if (id === 'proximas') renderProximas(proximasFilter);
+            else if (id === 'atendimento') { populateProcedimentosSelect();
+                updateClientesDatalist(); }
+            else if (id === 'protocolos') renderProtocolos();
+            else if (id === 'dashboard') renderDashboard();
+            else if (id === 'historico') {
+                const termo = document.getElementById('histBusca').value.trim();
+                if (termo) document.getElementById('btnHistBuscar').click();
+            }
+        }
+
+        // ========================================================================
+        //  INIT
+        // ========================================================================
+        function init() {
+            // If there are no protocols, we keep it empty (user must create them)
+            console.log('🚀 FlowTasks initialized successfully!');
+            console.log(`📦 ${DB.procedimentos.length} protocols, ${DB.atendimentos.length} appointments, ${DB.tarefas.length} tasks.`);
+            populateProcedimentosSelect();
+            updateClientesDatalist();
+            renderTarefas('hoje');
+            renderProtocolos();
+            renderDashboard();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            init();
+        });
+
+        // Expose globals
+        window.refreshCurrentView = refreshCurrentView;
+        window.closeModal = closeModal;
+        window.showModal = showModal;
+        window.removerItemTemp = removerItemTemp;
+        window.removerRecebimentoTemp = removerRecebimentoTemp;
+        window.copiarMensagem = copiarMensagem;
+        window.concluirTarefa = concluirTarefa;
+        window.reabrirTarefa = reabrirTarefa;
+        window.excluirTarefa = excluirTarefa;
+        window.editarTarefa = editarTarefa;
+        window.duplicarAtendimento = duplicarAtendimento;
+        window.editarProtocolo = editarProtocolo;
+        window.excluirProtocolo = excluirProtocolo;
+        window.duplicarProtocolo = duplicarProtocolo;
+        window.excluirAtendimento = excluirAtendimento;
+        window.abrirModalProtocolo = abrirModalProtocolo;
+        window.removerAcaoModal = removerAcaoModal;
+    </script>
+</body>
+</html>
