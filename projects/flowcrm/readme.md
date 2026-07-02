@@ -3,8 +3,6 @@
 
 **FlowCRM** is a modern, single‑page CRM application designed for small to medium businesses. It combines a clean Kanban pipeline, powerful client management, task tracking, and AI‑powered analytics in one intuitive interface. Built with vanilla JavaScript and a set of lightweight libraries, it runs entirely in the browser with local storage persistence — no backend required.
 
-![FlowCRM Dashboard](screenshots/dashboard.png)
-
 ---
 
 ## ✨ Features
