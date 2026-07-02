@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contadores de Clientes - Clínica</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+
+        body {
+            background: #f4f7fc;
+            color: #1e293b;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .app {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: #ffffff;
+            padding: 16px 24px;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0f3b5e;
+        }
+
+        .header h1 span {
+            color: #2a9d8f;
+        }
+
+        .header-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            background: #eef2f6;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background: #dce3ec;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: #2a9d8f;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #21867a;
+        }
+
+        .btn-danger {
+            background: #e63946;
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background: #c62836;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid #cbd5e1;
+        }
+        .btn-outline:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
+        .btn-sm {
+            padding: 4px 12px;
+            font-size: 12px;
+        }
+
+        .section {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 20px 24px;
+            margin-bottom: 28px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .section-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #0f3b5e;
+        }
+        .section-header .sub {
+            font-size: 14px;
+            color: #64748b;
+            font-weight: 400;
+        }
+
+        /* Dashboard */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 16px;
+            border-left: 4px solid #2a9d8f;
+        }
+        .card .label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+        }
+        .card .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0f3b5e;
+            margin-top: 4px;
+        }
+
+        /* Contadores */
+        .counters-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .counter-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            border-radius: 14px;
+            padding: 10px 16px;
+            border: 1px solid #e9edf2;
+        }
+
+        .counter-item .name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .counter-item .badge {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 2px 14px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .counter-item .actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .counter-item .actions .btn-icon-sm {
+            background: transparent;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: #64748b;
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
+        .counter-item .actions .btn-icon-sm:hover {
+            background: #e9edf2;
+            color: #0f3b5e;
+        }
+        .counter-item .actions .btn-icon-sm.danger:hover {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        /* Clientes */
+        .clients-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .client-card {
+            background: #f8fafc;
+            border-radius: 14px;
+            padding: 16px;
+            border: 1px solid #e9edf2;
+        }
+
+        .client-card .client-name {
+            font-weight: 700;
+            font-size: 17px;
+            color: #0f3b5e;
+            margin-bottom: 4px;
+        }
+
+        .client-card .client-info {
+            font-size: 13px;
+            color: #475569;
+            margin-bottom: 4px;
+        }
+
+        .client-card .client-info .counter-tag {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 0 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin: 2px 4px 2px 0;
+        }
+
+        .client-card .client-actions {
+            margin-top: 8px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        /* Histórico */
+        .history-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+
+        .history-controls input[type="date"] {
+            padding: 6px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        .history-table-wrap {
+            overflow-x: auto;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .history-table th {
+            text-align: left;
+            padding: 8px 10px;
+            background: #f1f5f9;
+            color: #475569;
+            font-weight: 600;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .history-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #eef2f6;
+        }
+
+        .history-table .delete-row {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .history-table .delete-row:hover {
+            color: #b91c1c;
+        }
+
+        .history-empty {
+            color: #94a3b8;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(3px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #fff;
+            border-radius: 24px;
+            padding: 28px 32px;
+            max-width: 540px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #0f3b5e;
+        }
+
+        .modal label {
+            display: block;
+            font-weight: 500;
+            font-size: 14px;
+            margin: 12px 0 4px;
+            color: #334155;
+        }
+
+        .modal input[type="text"],
+        .modal textarea,
+        .modal select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            font-size: 15px;
+            background: #fff;
+            transition: 0.15s ease;
+        }
+
+        .modal select[multiple] {
+            height: 100px;
+        }
+
+        .modal textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .modal input:focus,
+        .modal textarea:focus,
+        .modal select:focus {
+            outline: none;
+            border-color: #2a9d8f;
+            box-shadow: 0 0 0 3px rgba(42, 157, 143, 0.15);
+        }
+
+        .modal .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+
+        .modal .modal-actions .btn {
+            padding: 10px 24px;
+        }
+
+        /* Order list */
+        .counter-order-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .counter-order-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8fafc;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid #e9edf2;
+        }
+
+        .counter-order-item .order-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .counter-order-item .order-arrows {
+            display: flex;
+            gap: 4px;
+        }
+
+        .counter-order-item .order-arrows button {
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #64748b;
+            padding: 0 4px;
+        }
+        .counter-order-item .order-arrows button:hover {
+            color: #0f3b5e;
+        }
+
+        /* Responsivo */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+            .header-actions {
+                justify-content: flex-start;
+                flex-wrap: wrap;
+            }
+            .dashboard-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .clients-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .modal {
+                padding: 20px;
+            }
+            .clients-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            z-index: 2000;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.25s ease;
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.2s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app" id="app">
+    <header class="header">
+        <h1>📋 <span>Clientes</span> · Contadores</h1>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="openModal('addCounter')">➕ Novo Contador</button>
+            <button class="btn btn-primary" onclick="openModal('addClient')">👤 Novo Cliente</button>
+            <button class="btn btn-outline" onclick="openModal('manageCounters')">⚙️ Gerenciar</button>
+            <button class="btn btn-outline" onclick="exportData()">⬇️ Exportar</button>
+            <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">⬆️ Importar</button>
+            <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+        </div>
+    </header>
+
+    <!-- Dashboard -->
+    <section class="section">
+        <div class="section-header">
+            <h2>📊 Dashboard <span class="sub">Total de clientes por contador</span></h2>
+        </div>
+        <div class="dashboard-grid" id="dashboardGrid"></div>
+    </section>
+
+    <!-- Contadores -->
+    <section class="section">
+        <div class="section-header">
+            <h2>🔢 Contadores <span class="sub">Categorias</span></h2>
+            <button class="btn btn-sm btn-primary" onclick="openModal('addCounter')">➕ Adicionar</button>
+        </div>
+        <div class="counters-list" id="countersList"></div>
+    </section>
+
+    <!-- Clientes -->
+    <section class="section">
+        <div class="section-header">
+            <h2>👤 Clientes <span class="sub">Cadastrados</span></h2>
+            <button class="btn btn-sm btn-primary" onclick="openModal('addClient')">➕ Adicionar</button>
+        </div>
+        <div class="clients-grid" id="clientsGrid"></div>
+    </section>
+
+    <!-- Histórico -->
+    <section class="section">
+        <div class="section-header">
+            <h2>📜 Histórico</h2>
+            <button class="btn btn-sm btn-outline" onclick="clearHistory()">🗑️ Limpar tudo</button>
+        </div>
+        <div class="history-controls">
+            <label>Filtrar por data:
+                <input type="date" id="historyFilterDate" onchange="renderHistory()">
+            </label>
+            <button class="btn btn-sm btn-outline" onclick="document.getElementById('historyFilterDate').value=''; renderHistory();">Limpar</button>
+        </div>
+        <div class="history-table-wrap">
+            <table class="history-table">
+                <thead><tr><th>Data/Hora</th><th>Ação</th><th></th></tr></thead>
+                <tbody id="historyBody"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this) closeModal()">
+        <div class="modal" id="modalContent"></div>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    //  DADOS
+    // ============================================================
+    const STORAGE_KEY = 'contadores_data';
+    let data = {
+        counters: [],
+        clients: [],
+        history: []
+    };
+
+    // ============================================================
+    //  INICIALIZAÇÃO
+    // ============================================================
+    function init() {
+        loadData();
+        if (data.counters.length === 0) {
+            const defaults = [
+                { id: 'leads', name: 'Leads', order: 1 },
+                { id: 'agendamentos', name: 'Agendamentos', order: 2 },
+                { id: 'comparecimentos', name: 'Comparecimentos', order: 3 },
+                { id: 'fechamentos', name: 'Fechamentos', order: 4 },
+                { id: 'faturamento', name: 'Faturamento', order: 5 }
+            ];
+            defaults.forEach(c => data.counters.push({ ...c }));
+            saveData();
+        }
+        data.clients.forEach(c => {
+            if (!c.counterIds) c.counterIds = [];
+        });
+        renderAll();
+    }
+
+    // ============================================================
+    //  PERSISTÊNCIA
+    // ============================================================
+    function loadData() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                data = parsed;
+            }
+        } catch (e) { /* ignora */ }
+    }
+
+    function saveData() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function autoSave() {
+        saveData();
+        renderAll();
+    }
+
+    // ============================================================
+    //  RENDERIZAÇÃO GERAL
+    // ============================================================
+    function renderAll() {
+        renderDashboard();
+        renderCounters();
+        renderClients();
+        renderHistory();
+    }
+
+    // ============================================================
+    //  DASHBOARD
+    // ============================================================
+    function renderDashboard() {
+        const grid = document.getElementById('dashboardGrid');
+        const sorted = [...data.counters].sort((a, b) => (a.order || 0) - (b.order || 0));
+        let html = '';
+        sorted.forEach(c => {
+            const count = data.clients.filter(cl => (cl.counterIds || []).includes(c.id)).length;
+            html += `
+                <div class="card">
+                    <div class="label">${c.name}</div>
+                    <div class="value">${count}</div>
+                </div>
+            `;
+        });
+        if (!html) html = '<div style="padding:20px;color:#94a3b8;">Nenhum contador criado.</div>';
+        grid.innerHTML = html;
+    }
+
+    // ============================================================
+    //  CONTADORES
+    // ============================================================
+    function renderCounters() {
+        const container = document.getElementById('countersList');
+        const sorted = [...data.counters].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        if (sorted.length === 0) {
+            container.innerHTML = `<div style="padding:20px;text-align:center;color:#94a3b8;">Nenhum contador. Clique em "Adicionar".</div>`;
+            return;
+        }
+
+        let html = '';
+        sorted.forEach(c => {
+            const count = data.clients.filter(cl => (cl.counterIds || []).includes(c.id)).length;
+            html += `
+                <div class="counter-item">
+                    <span class="name">${c.name}</span>
+                    <span class="badge">${count} cliente${count !== 1 ? 's' : ''}</span>
+                    <div class="actions">
+                        <button class="btn-icon-sm" onclick="openEditCounter('${c.id}')" title="Editar">✏️</button>
+                        <button class="btn-icon-sm danger" onclick="deleteCounter('${c.id}')" title="Excluir">🗑️</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    // ============================================================
+    //  CLIENTES
+    // ============================================================
+    function renderClients() {
+        const container = document.getElementById('clientsGrid');
+        if (!data.clients || data.clients.length === 0) {
+            container.innerHTML = `<div style="padding:20px;text-align:center;color:#94a3b8;">Nenhum cliente cadastrado.</div>`;
+            return;
+        }
+
+        let html = '';
+        data.clients.forEach((client, index) => {
+            const counterNames = (client.counterIds || [])
+                .map(id => {
+                    const c = data.counters.find(c => c.id === id);
+                    return c ? c.name : null;
+                })
+                .filter(Boolean);
+
+            const tags = counterNames.length > 0
+                ? counterNames.map(n => `<span class="counter-tag">#${n}</span>`).join(' ')
+                : '<span style="color:#94a3b8;font-size:12px;">Nenhum</span>';
+
+            html += `
+                <div class="client-card fade-in">
+                    <div class="client-name">${client.name || 'Sem nome'}</div>
+                    ${client.phone ? `<div class="client-info">📱 ${client.phone}</div>` : ''}
+                    ${client.email ? `<div class="client-info">✉️ ${client.email}</div>` : ''}
+                    ${client.notes ? `<div class="client-info">📝 ${client.notes}</div>` : ''}
+                    <div class="client-info"><strong>Contadores:</strong> ${tags}</div>
+                    <div class="client-actions">
+                        <button class="btn btn-sm btn-outline" onclick="openEditClient(${index})">✏️ Editar</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteClient(${index})">🗑️</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    // ============================================================
+    //  CRUD CLIENTES
+    // ============================================================
+    function addClient(name, phone, email, notes, counterIds) {
+        if (!name || name.trim() === '') {
+            showToast('Digite um nome válido.');
+            return;
+        }
+        const ids = Array.isArray(counterIds) ? [...new Set(counterIds)] : [];
+        const newClient = {
+            id: 'cl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            name: name.trim(),
+            phone: phone || '',
+            email: email || '',
+            notes: notes || '',
+            counterIds: ids,
+            createdAt: new Date().toISOString()
+        };
+        data.clients.push(newClient);
+
+        // Registrar no histórico
+        const counterNames = ids.map(id => {
+            const c = data.counters.find(c => c.id === id);
+            return c ? c.name : id;
+        }).join(', ');
+        addHistory(`➕ Cliente criado: ${newClient.name} (Contadores: ${counterNames || 'nenhum'})`);
+
+        autoSave();
+        showToast(`Cliente "${newClient.name}" adicionado.`);
+        closeModal();
+    }
+
+    function editClient(index, name, phone, email, notes, counterIds) {
+        if (!name || name.trim() === '') {
+            showToast('Digite um nome válido.');
+            return;
+        }
+        if (index < 0 || index >= data.clients.length) return;
+        const client = data.clients[index];
+        const oldName = client.name;
+        const oldCounterNames = (client.counterIds || []).map(id => {
+            const c = data.counters.find(c => c.id === id);
+            return c ? c.name : id;
+        }).join(', ');
+
+        const ids = Array.isArray(counterIds) ? [...new Set(counterIds)] : [];
+        client.name = name.trim();
+        client.phone = phone || '';
+        client.email = email || '';
+        client.notes = notes || '';
+        client.counterIds = ids;
+
+        const newCounterNames = ids.map(id => {
+            const c = data.counters.find(c => c.id === id);
+            return c ? c.name : id;
+        }).join(', ');
+        addHistory(`✏️ Cliente atualizado: ${client.name} (Contadores: ${newCounterNames || 'nenhum'}) (anterior: ${oldCounterNames || 'nenhum'})`);
+
+        autoSave();
+        showToast(`Cliente atualizado.`);
+        closeModal();
+    }
+
+    function deleteClient(index) {
+        if (!confirm('Tem certeza que deseja excluir este cliente?')) return;
+        const client = data.clients[index];
+        data.clients.splice(index, 1);
+        addHistory(`🗑️ Cliente removido: ${client.name}`);
+        autoSave();
+        showToast('Cliente removido.');
+    }
+
+    // ============================================================
+    //  CRUD CONTADORES
+    // ============================================================
+    function addCounter(name) {
+        if (!name || name.trim() === '') {
+            showToast('Digite um nome válido.');
+            return;
+        }
+        name = name.trim();
+        if (data.counters.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+            showToast('Já existe um contador com este nome.');
+            return;
+        }
+        const maxOrder = data.counters.reduce((max, c) => Math.max(max, c.order || 0), 0);
+        const newCounter = {
+            id: 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            name: name,
+            order: maxOrder + 1
+        };
+        data.counters.push(newCounter);
+        addHistory(`➕ Contador criado: ${name}`);
+        autoSave();
+        showToast(`Contador "${name}" criado.`);
+        closeModal();
+    }
+
+    function deleteCounter(id) {
+        if (!confirm('Tem certeza que deseja excluir este contador? Os clientes associados perderão a referência.')) return;
+        const counter = data.counters.find(c => c.id === id);
+        if (!counter) return;
+        data.counters = data.counters.filter(c => c.id !== id);
+        // Remover dos clientes
+        data.clients.forEach(c => {
+            c.counterIds = (c.counterIds || []).filter(cid => cid !== id);
+        });
+        addHistory(`🗑️ Contador removido: ${counter.name}`);
+        autoSave();
+        showToast('Contador excluído.');
+    }
+
+    function editCounter(id, newName) {
+        if (!newName || newName.trim() === '') {
+            showToast('Digite um nome válido.');
+            return;
+        }
+        newName = newName.trim();
+        const counter = data.counters.find(c => c.id === id);
+        if (!counter) return;
+        if (data.counters.some(c => c.id !== id && c.name.toLowerCase() === newName.toLowerCase())) {
+            showToast('Já existe um contador com este nome.');
+            return;
+        }
+        const oldName = counter.name;
+        counter.name = newName;
+        addHistory(`✏️ Contador renomeado: ${oldName} → ${newName}`);
+        autoSave();
+        showToast(`Contador atualizado.`);
+        closeModal();
+    }
+
+    function moveCounterUp(id) {
+        const sorted = [...data.counters].sort((a, b) => (a.order || 0) - (b.order || 0));
+        const idx = sorted.findIndex(c => c.id === id);
+        if (idx <= 0) return;
+        const prev = sorted[idx - 1];
+        const curr = sorted[idx];
+        [curr.order, prev.order] = [prev.order, curr.order];
+        autoSave();
+        renderAll();
+    }
+
+    function moveCounterDown(id) {
+        const sorted = [...data.counters].sort((a, b) => (a.order || 0) - (b.order || 0));
+        const idx = sorted.findIndex(c => c.id === id);
+        if (idx === -1 || idx >= sorted.length - 1) return;
+        const next = sorted[idx + 1];
+        const curr = sorted[idx];
+        [curr.order, next.order] = [next.order, curr.order];
+        autoSave();
+        renderAll();
+    }
+
+    // ============================================================
+    //  HISTÓRICO
+    // ============================================================
+    function addHistory(action) {
+        const now = new Date();
+        data.history.push({
+            id: Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            action: action,
+            timestamp: now.toISOString(),
+            date: now.toISOString().split('T')[0],
+            time: now.toTimeString().slice(0, 5)
+        });
+        if (data.history.length > 5000) data.history = data.history.slice(-5000);
+    }
+
+    function renderHistory() {
+        const filterDate = document.getElementById('historyFilterDate').value;
+        let filtered = [...data.history];
+        if (filterDate) filtered = filtered.filter(h => h.date === filterDate);
+        filtered.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+        const tbody = document.getElementById('historyBody');
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" class="history-empty">Nenhum registro.</td></tr>`;
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(h => {
+            html += `
+                <tr>
+                    <td>${h.date} ${h.time}</td>
+                    <td>${h.action}</td>
+                    <td><button class="delete-row" onclick="deleteHistory('${h.id}')">✕</button></td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function deleteHistory(id) {
+        if (!confirm('Excluir este registro do histórico?')) return;
+        data.history = data.history.filter(h => h.id !== id);
+        autoSave();
+        showToast('Registro removido.');
+    }
+
+    function clearHistory() {
+        if (!confirm('Apagar TODO o histórico?')) return;
+        data.history = [];
+        autoSave();
+        showToast('Histórico limpo.');
+    }
+
+    // ============================================================
+    //  IMPORTAÇÃO / EXPORTAÇÃO
+    // ============================================================
+    function exportData() {
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `contadores_backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Dados exportados!');
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (!imported.counters || !Array.isArray(imported.counters)) {
+                    showToast('Arquivo inválido.');
+                    return;
+                }
+                if (!confirm('Substituir TODOS os dados atuais?')) return;
+                data = imported;
+                data.clients.forEach(c => { if (!c.counterIds) c.counterIds = []; });
+                if (!data.history) data.history = [];
+                autoSave();
+                showToast('Dados importados!');
+            } catch (err) {
+                showToast('Erro: ' + err.message);
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+
+    // ============================================================
+    //  MODAL
+    // ============================================================
+    function openModal(type, dataParam) {
+        const overlay = document.getElementById('modalOverlay');
+        const content = document.getElementById('modalContent');
+        overlay.classList.add('active');
+
+        if (type === 'addCounter') {
+            content.innerHTML = `
+                <h3>➕ Novo Contador</h3>
+                <label>Nome</label>
+                <input type="text" id="newCounterName" placeholder="Ex: Botox" autofocus>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="addCounterFromModal()">Criar</button>
+                </div>
+            `;
+            setTimeout(() => document.getElementById('newCounterName')?.focus(), 100);
+        } else if (type === 'addClient') {
+            const options = data.counters.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            content.innerHTML = `
+                <h3>👤 Novo Cliente</h3>
+                <label>Nome *</label>
+                <input type="text" id="newClientName" placeholder="Nome completo" autofocus>
+                <label>Telefone</label>
+                <input type="text" id="newClientPhone" placeholder="(11) 99999-9999">
+                <label>Email</label>
+                <input type="text" id="newClientEmail" placeholder="cliente@email.com">
+                <label>Observações</label>
+                <textarea id="newClientNotes" placeholder="Informações adicionais..."></textarea>
+                <label>Contadores (Ctrl+clique para múltiplos)</label>
+                <select id="newClientCounters" multiple>${options}</select>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="addClientFromModal()">Salvar</button>
+                </div>
+            `;
+            setTimeout(() => document.getElementById('newClientName')?.focus(), 100);
+        } else if (type === 'editClient') {
+            const index = dataParam;
+            const client = data.clients[index];
+            if (!client) { closeModal(); return; }
+            const options = data.counters.map(c => {
+                const sel = (client.counterIds || []).includes(c.id) ? 'selected' : '';
+                return `<option value="${c.id}" ${sel}>${c.name}</option>`;
+            }).join('');
+            content.innerHTML = `
+                <h3>✏️ Editar Cliente</h3>
+                <label>Nome *</label>
+                <input type="text" id="editClientName" value="${client.name || ''}" autofocus>
+                <label>Telefone</label>
+                <input type="text" id="editClientPhone" value="${client.phone || ''}">
+                <label>Email</label>
+                <input type="text" id="editClientEmail" value="${client.email || ''}">
+                <label>Observações</label>
+                <textarea id="editClientNotes">${client.notes || ''}</textarea>
+                <label>Contadores (Ctrl+clique para múltiplos)</label>
+                <select id="editClientCounters" multiple>${options}</select>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="editClientFromModal(${index})">Salvar</button>
+                </div>
+            `;
+            setTimeout(() => document.getElementById('editClientName')?.focus(), 100);
+        } else if (type === 'manageCounters') {
+            const sorted = [...data.counters].sort((a, b) => (a.order || 0) - (b.order || 0));
+            let listHtml = '';
+            sorted.forEach(c => {
+                listHtml += `
+                    <div class="counter-order-item">
+                        <span class="order-name">${c.name}</span>
+                        <div class="order-arrows">
+                            <button onclick="moveCounterUp('${c.id}')">▲</button>
+                            <button onclick="moveCounterDown('${c.id}')">▼</button>
+                        </div>
+                    </div>
+                `;
+            });
+            content.innerHTML = `
+                <h3>⚙️ Gerenciar Contadores</h3>
+                <p style="font-size:14px;color:#64748b;margin-bottom:12px;">Use as setas para reordenar.</p>
+                <div class="counter-order-list">${listHtml}</div>
+                <div class="modal-actions">
+                    <button class="btn btn-primary" onclick="closeModal()">Fechar</button>
+                </div>
+            `;
+        } else if (type === 'editCounter') {
+            const counter = data.counters.find(c => c.id === dataParam);
+            if (!counter) { closeModal(); return; }
+            content.innerHTML = `
+                <h3>✏️ Editar Contador</h3>
+                <label>Nome</label>
+                <input type="text" id="editCounterName" value="${counter.name}" autofocus>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="editCounterFromModal('${counter.id}')">Salvar</button>
+                </div>
+            `;
+            setTimeout(() => document.getElementById('editCounterName')?.focus(), 100);
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('modalOverlay').classList.remove('active');
+    }
+
+    function addCounterFromModal() {
+        const input = document.getElementById('newCounterName');
+        if (input) addCounter(input.value);
+    }
+
+    function openEditCounter(id) {
+        openModal('editCounter', id);
+    }
+
+    function editCounterFromModal(id) {
+        const input = document.getElementById('editCounterName');
+        if (input) editCounter(id, input.value);
+    }
+
+    function addClientFromModal() {
+        const name = document.getElementById('newClientName');
+        const phone = document.getElementById('newClientPhone');
+        const email = document.getElementById('newClientEmail');
+        const notes = document.getElementById('newClientNotes');
+        const counters = document.getElementById('newClientCounters');
+        if (!name) return;
+        const selected = Array.from(counters.selectedOptions).map(opt => opt.value);
+        addClient(name.value, phone.value, email.value, notes.value, selected);
+    }
+
+    function openEditClient(index) {
+        openModal('editClient', index);
+    }
+
+    function editClientFromModal(index) {
+        const name = document.getElementById('editClientName');
+        const phone = document.getElementById('editClientPhone');
+        const email = document.getElementById('editClientEmail');
+        const notes = document.getElementById('editClientNotes');
+        const counters = document.getElementById('editClientCounters');
+        if (!name) return;
+        const selected = Array.from(counters.selectedOptions).map(opt => opt.value);
+        editClient(index, name.value, phone.value, email.value, notes.value, selected);
+    }
+
+    // ============================================================
+    //  TOAST
+    // ============================================================
+    let toastTimeout = null;
+    function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => el.classList.remove('show'), 2600);
+    }
+
+    // ============================================================
+    //  INICIALIZAR
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
