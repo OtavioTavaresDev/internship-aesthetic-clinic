@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowCRM — Plataforma de Relacionamento</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8',
+                            500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js">
+    </script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js">
+    </script>
+
+    <style>
+        :root {
+            --sidebar-w: 260px;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --border: #f1f5f9;
+            --hover: #f8fafc;
+        }
+        .dark {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --text: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --hover: #1e293b;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            height: 100vh;
+            overflow: hidden;
+            transition: background 0.3s, color 0.3s;
+        }
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 3px;
+        }
+        .sidebar-transition {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .fade-in {
+            animation: fadeIn 0.2s ease-out;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .slide-in-right {
+            animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        .toast-enter {
+            animation: toastIn 0.35s ease-out;
+        }
+        @keyframes toastIn {
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        .metric-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            background: var(--surface);
+            border-color: var(--border);
+        }
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.12);
+        }
+        .pipeline-col {
+            min-height: 200px;
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 12px;
+            width: 100%;
+            max-width: 300px;
+            flex-shrink: 0;
+            border: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+        .pipeline-col.drag-over {
+            background: #eef2ff;
+            border: 2px dashed #6366f1;
+        }
+        .pipeline-card {
+            background: var(--surface);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            cursor: grab;
+            transition: box-shadow 0.2s, transform 0.15s;
+        }
+        .pipeline-card:active {
+            cursor: grabbing;
+        }
+        .pipeline-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .pipeline-card.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                z-index: 50;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                width: 260px;
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .pipeline-col {
+                max-width: 85vw;
+            }
+        }
+        .surface-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+        }
+        .ai-response pre {
+            background: var(--bg);
+            padding: 8px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+        .ai-response p {
+            margin-bottom: 8px;
+        }
+        .preset-btn {
+            transition: all 0.15s;
+        }
+        .preset-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .suggestion-item {
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .suggestion-item:hover {
+            background: #eef2ff;
+        }
+        .timeline-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            position: absolute;
+            left: -5px;
+            top: 6px;
+            z-index: 2;
+        }
+        .timeline-line {
+            position: absolute;
+            left: 0;
+            top: 16px;
+            bottom: -16px;
+            width: 1px;
+            background: #e2e8f0;
+        }
+        .dark .timeline-line {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="antialiased h-screen overflow-hidden" id="bodyRoot">
+
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/40 z-40 hidden md:hidden transition-opacity duration-300" onclick="toggleSidebar()"></div>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar sidebar-transition fixed top-0 left-0 z-50 h-full w-[260px] bg-slate-900 text-white flex flex-col shadow-2xl md:translate-x-0">
+        <div class="flex items-center gap-3 px-5 py-5 border-b border-slate-700/60">
+            <div class="w-9 h-9 rounded-lg bg-brand-500 flex items-center justify-center font-bold text-white text-lg">F</div>
+            <span class="text-xl font-semibold tracking-tight">FlowCRM</span>
+        </div>
+        <nav class="flex-1 py-4 px-3 space-y-1 overflow-y-auto" id="navLinks">
+            <button onclick="navigateTo('dashboard')" data-nav="dashboard" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 bg-brand-600 text-white hover:bg-brand-500"><i data-lucide="layout-dashboard" class="w-5 h-5"></i> <span>Dashboard</span></button>
+            <button onclick="navigateTo('pipeline')" data-nav="pipeline" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-slate-300 hover:bg-slate-800 hover:text-white"><i data-lucide="columns-2" class="w-5 h-5"></i> <span>Pipeline</span></button>
+            <button onclick="navigateTo('clients')" data-nav="clients" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-slate-300 hover:bg-slate-800 hover:text-white"><i data-lucide="users" class="w-5 h-5"></i> <span>Clientes</span></button>
+            <button onclick="navigateTo('tasks')" data-nav="tasks" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-slate-300 hover:bg-slate-800 hover:text-white relative"><i data-lucide="check-square" class="w-5 h-5"></i> <span>Tarefas</span> <span id="taskBadge" class="ml-auto bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 hidden">0</span></button>
+            <button onclick="navigateTo('ia')" data-nav="ia" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-slate-300 hover:bg-slate-800 hover:text-white"><i data-lucide="brain" class="w-5 h-5"></i> <span>IA Analytics</span></button>
+            <button onclick="navigateTo('import')" data-nav="import" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-slate-300 hover:bg-slate-800 hover:text-white"><i data-lucide="upload-cloud" class="w-5 h-5"></i> <span>Importar / Exportar</span></button>
+            <button onclick="navigateTo('reports')" data-nav="reports" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-slate-300 hover:bg-slate-800 hover:text-white"><i data-lucide="bar-chart-2" class="w-5 h-5"></i> <span>Relatórios</span></button>
+        </nav>
+        <div class="px-4 py-3 border-t border-slate-700/60">
+            <button onclick="toggleTheme()" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-slate-400 hover:bg-slate-800 transition-all" id="themeToggle">
+                <i data-lucide="moon" class="w-4 h-4" id="themeIcon"></i> <span id="themeLabel">Modo Escuro</span>
+            </button>
+            <div class="text-xs text-slate-500 mt-2">
+                <p>© 2026 FlowCRM v2.1</p>
+                <p class="mt-0.5">Dados locais · Sem backend</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main id="mainContent" class="md:ml-[260px] h-screen overflow-y-auto p-4 md:p-6 lg:p-8 transition-all duration-300" style="background: var(--bg);">
+        <div class="flex items-center justify-between mb-6 md:hidden">
+            <button onclick="toggleSidebar()" class="p-2 rounded-lg surface-card shadow-sm hover:bg-gray-100 dark:hover:bg-slate-700"><i data-lucide="menu" class="w-6 h-6"></i></button>
+            <h1 class="text-lg font-bold" style="color:var(--text)">FlowCRM</h1>
+            <div class="w-10"></div>
+        </div>
+
+        <!-- VIEW: Dashboard -->
+        <section id="view-dashboard" class="fade-in space-y-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4" id="metricsCards"></div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <div class="surface-card rounded-xl shadow-sm p-5 lg:col-span-2">
+                    <h3 class="text-sm font-semibold uppercase tracking-wide mb-4" style="color:var(--text-secondary)"><i data-lucide="funnel" class="w-4 h-4 inline mr-1.5 text-brand-500"></i> Funil de Vendas <span class="text-xs font-normal">(clique para filtrar)</span></h3>
+                    <div class="h-64 md:h-80"><canvas id="chartFunnel"></canvas></div>
+                </div>
+                <div class="surface-card rounded-xl shadow-sm p-5">
+                    <h3 class="text-sm font-semibold uppercase tracking-wide mb-4" style="color:var(--text-secondary)"><i data-lucide="trending-up" class="w-4 h-4 inline mr-1.5 text-emerald-500"></i> Conversão (%)</h3>
+                    <div class="h-64 md:h-80"><canvas id="chartConversion"></canvas></div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div class="surface-card rounded-xl shadow-sm p-5">
+                    <h3 class="text-sm font-semibold uppercase tracking-wide mb-3" style="color:var(--text-secondary)"><i data-lucide="calendar-days" class="w-4 h-4 inline mr-1.5 text-cyan-500"></i> Evolução (30 dias)</h3>
+                    <div class="h-64"><canvas id="chartTimeline"></canvas></div>
+                </div>
+                <div class="surface-card rounded-xl shadow-sm p-5">
+                    <h3 class="text-sm font-semibold uppercase tracking-wide mb-3" style="color:var(--text-secondary)"><i data-lucide="clock" class="w-4 h-4 inline mr-1.5 text-amber-500"></i> Últimos Clientes</h3>
+                    <div class="overflow-x-auto max-h-64" id="recentClientsTable"></div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="statsGrid"></div>
+        </section>
+
+        <!-- VIEW: Pipeline (Kanban com Drag-and-Drop) -->
+        <section id="view-pipeline" class="fade-in hidden">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold" style="color:var(--text)">Pipeline de Vendas</h2>
+                <div class="flex gap-2">
+                    <button onclick="openFunnelProbConfig()" class="px-3 py-2 surface-card rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-all flex items-center gap-1.5" style="border:1px solid var(--border)"><i data-lucide="percent" class="w-4 h-4"></i> Probabilidades</button>
+                    <button onclick="openFunnelConfig()" class="px-3 py-2 surface-card rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-all flex items-center gap-1.5" style="border:1px solid var(--border)"><i data-lucide="settings" class="w-4 h-4"></i> Configurar Funil</button>
+                </div>
+            </div>
+            <div class="flex gap-4 overflow-x-auto pb-4" id="pipelineContainer" style="scroll-snap-type: x mandatory;"></div>
+            <p class="text-sm mt-2" style="color:var(--text-secondary)">🖱️ Arraste os cards entre as colunas para mudar o status.</p>
+            <div id="pipelineForecast" class="mt-4 p-4 surface-card rounded-xl shadow-sm"></div>
+        </section>
+
+        <!-- VIEW: Clientes -->
+        <section id="view-clients" class="fade-in hidden space-y-4">
+            <div class="surface-card rounded-xl shadow-sm p-4">
+                <div class="flex flex-wrap gap-3 items-center justify-between">
+                    <div class="flex flex-wrap gap-2 items-center flex-1">
+                        <div class="relative flex-1 min-w-[200px] max-w-md">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                            <input type="text" id="searchInput" placeholder="Buscar clientes... (Ctrl+K)" class="w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all" style="background:var(--surface);border-color:var(--border);color:var(--text)" oninput="onSearchDebounced()">
+                        </div>
+                        <select id="filterDatePreset" onchange="applyAllFilters()" class="border rounded-lg text-sm px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)">
+                            <option value="all">📅 Período</option><option value="today">Hoje</option><option value="yesterday">Ontem</option><option value="7days">7 dias</option><option value="30days">30 dias</option><option value="thisMonth">Este mês</option><option value="lastMonth">Mês passado</option><option value="thisYear">Este ano</option><option value="custom">Personalizado</option>
+                        </select>
+                        <select id="filterStatus" onchange="applyAllFilters()" class="border rounded-lg text-sm px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"><option value="all">🏷️ Status</option></select>
+                        <select id="filterSource" onchange="applyAllFilters()" class="border rounded-lg text-sm px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"><option value="all">📌 Origem</option></select>
+                        <select id="filterOwner" onchange="applyAllFilters()" class="border rounded-lg text-sm px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"><option value="all">👤 Resp.</option></select>
+                    </div>
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="addClient()" class="px-4 py-2.5 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-all flex items-center gap-1.5 shadow-sm"><i data-lucide="plus" class="w-4 h-4"></i> Adicionar (Ctrl+N)</button>
+                        <button onclick="deleteSelected()" id="btnDeleteSelected" class="px-4 py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-medium hover:bg-red-100 transition-all flex items-center gap-1.5 hidden"><i data-lucide="trash-2" class="w-4 h-4"></i> Excluir sel.</button>
+                        <button onclick="exportCurrentView()" class="px-4 py-2.5 surface-card rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-all flex items-center gap-1.5" style="border:1px solid var(--border)"><i data-lucide="download" class="w-4 h-4"></i> Exportar</button>
+                    </div>
+                </div>
+                <div id="customDateRange" class="flex gap-2 items-center mt-3 hidden">
+                    <input type="date" id="dateFrom" onchange="applyAllFilters()" class="border rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)">
+                    <span style="color:var(--text-secondary)">até</span>
+                    <input type="date" id="dateTo" onchange="applyAllFilters()" class="border rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)">
+                    <button onclick="clearCustomDate()" class="text-xs text-brand-600 hover:underline">Limpar</button>
+                </div>
+            </div>
+            <div class="surface-card rounded-xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto max-h-[55vh] overflow-y-auto" id="clientsTableContainer">
+                    <table class="w-full text-sm" id="clientsTable">
+                        <thead class="bg-gray-50 dark:bg-slate-800 sticky top-0 z-10">
+                            <tr>
+                                <th class="px-3 py-3 text-left w-10"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()" class="rounded"></th>
+                                <th class="px-3 py-3 text-left font-semibold cursor-pointer select-none" onclick="setSort('firstName')" style="color:var(--text-secondary)">Nome</th>
+                                <th class="px-3 py-3 text-left font-semibold cursor-pointer select-none hidden md:table-cell" onclick="setSort('email')" style="color:var(--text-secondary)">Email</th>
+                                <th class="px-3 py-3 text-left font-semibold cursor-pointer select-none" onclick="setSort('status')" style="color:var(--text-secondary)">Status</th>
+                                <th class="px-3 py-3 text-left font-semibold cursor-pointer select-none hidden lg:table-cell" onclick="setSort('source')" style="color:var(--text-secondary)">Origem</th>
+                                <th class="px-3 py-3 text-left font-semibold cursor-pointer select-none hidden lg:table-cell" onclick="setSort('owner')" style="color:var(--text-secondary)">Resp.</th>
+                                <th class="px-3 py-3 text-right font-semibold cursor-pointer select-none" onclick="setSort('potentialValue')" style="color:var(--text-secondary)">Valor</th>
+                                <th class="px-3 py-3 text-center w-24">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientsTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="flex items-center justify-between px-4 py-3 border-t bg-gray-50/50 dark:bg-slate-800/50" id="paginationBar" style="border-color:var(--border)">
+                    <span class="text-xs" id="paginationInfo" style="color:var(--text-secondary)"></span>
+                    <div class="flex gap-1" id="paginationButtons"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW: Tarefas -->
+        <section id="view-tasks" class="fade-in hidden space-y-4">
+            <div class="flex justify-between items-center"><h2 class="text-lg font-semibold" style="color:var(--text)">Gerenciador de Tarefas</h2><button onclick="addTask()" class="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-all flex items-center gap-1.5"><i data-lucide="plus" class="w-4 h-4"></i> Nova Tarefa (Ctrl+Shift+T)</button></div>
+            <div class="surface-card rounded-xl shadow-sm p-4">
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <select id="taskFilterStatus" onchange="renderTasks()" class="border rounded-lg text-sm px-3 py-2" style="background:var(--surface);border-color:var(--border);color:var(--text)"><option value="all">Todas</option><option value="pending">Pendentes</option><option value="done">Concluídas</option></select>
+                </div>
+                <div id="tasksList" class="space-y-2 max-h-[60vh] overflow-y-auto"></div>
+            </div>
+        </section>
+
+        <!-- VIEW: IA Analytics -->
+        <section id="view-ia" class="fade-in hidden space-y-5">
+            <div class="surface-card rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color:var(--text)"><i data-lucide="brain" class="w-5 h-5 text-brand-500"></i> Análise Inteligente</h2>
+                <p style="color:var(--text-secondary)" class="text-sm mb-4">Conecte qualquer API compatível com OpenAI (Groq, DeepSeek, Together, OpenRouter, etc.) para analisar seus dados.</p>
+                <div class="mb-4">
+                    <label class="block text-xs font-semibold mb-2" style="color:var(--text-secondary)">⚡ Configuração rápida</label>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="applyPreset('groq')" class="preset-btn px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-medium hover:bg-purple-100">Groq (Grátis)</button>
+                        <button onclick="applyPreset('deepseek')" class="preset-btn px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-medium hover:bg-blue-100">DeepSeek (Grátis)</button>
+                        <button onclick="applyPreset('together')" class="preset-btn px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-medium hover:bg-amber-100">Together AI</button>
+                        <button onclick="applyPreset('openrouter')" class="preset-btn px-3 py-1.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-lg text-xs font-medium hover:bg-teal-100">OpenRouter</button>
+                        <button onclick="applyPreset('openai')" class="preset-btn px-3 py-1.5 bg-green-50 text-green-700 border border-green-200 rounded-lg text-xs font-medium hover:bg-green-100">OpenAI</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Chave da API</label><input type="password" id="iaApiKey" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)" placeholder="sk-... ou gsk_..."></div>
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Endpoint</label><input type="text" id="iaEndpoint" value="https://api.openai.com/v1/chat/completions" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)" oninput="onEndpointChange()"></div>
+                    <div class="relative"><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Modelo (digite livremente)</label><input type="text" id="iaModel" value="gpt-3.5-turbo" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)" oninput="onModelInput()" onfocus="onModelInput()" autocomplete="off"><div id="modelSuggestions" class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden max-h-40 overflow-y-auto"></div></div>
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Temperatura (0-1)</label><input type="number" id="iaTemperature" value="0.7" step="0.1" min="0" max="1" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></div>
+                </div>
+                <div class="mb-4"><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Prompt</label><textarea id="iaPrompt" rows="3" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)" placeholder="Ex: Analise o funil de vendas e sugira ações para melhorar a conversão."></textarea></div>
+                <div class="flex gap-2 mb-4"><button onclick="executeIAAnalysis()" class="px-4 py-2.5 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-all flex items-center gap-1.5"><i data-lucide="sparkles" class="w-4 h-4"></i> Analisar com IA</button><button onclick="runLocalAnalysis()" class="px-4 py-2.5 surface-card rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-all" style="border:1px solid var(--border)">Análise Local (offline)</button></div>
+                <div id="iaResponse" class="ai-response rounded-xl p-4 max-h-96 overflow-y-auto text-sm hidden" style="background:var(--bg);color:var(--text)"></div>
+                <div id="iaLoading" class="hidden text-center py-4"><span class="animate-pulse text-brand-500">🤖 Processando análise...</span></div>
+                <div id="iaDebugLog" class="hidden mt-4 bg-gray-900 text-green-400 rounded-xl p-4 text-xs font-mono overflow-x-auto max-h-48"></div>
+            </div>
+        </section>
+
+        <!-- VIEW: Importar / Exportar -->
+        <section id="view-import" class="fade-in hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div class="surface-card rounded-xl shadow-sm p-6">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color:var(--text)"><i data-lucide="upload-cloud" class="w-5 h-5 text-brand-500"></i> Importar</h2>
+                    <div id="dropZone" class="border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-xl p-8 text-center hover:border-brand-400 transition-all cursor-pointer" ondragover="event.preventDefault(); this.classList.add('border-brand-500')" ondragleave="this.classList.remove('border-brand-500')" ondrop="handleDrop(event)" onclick="document.getElementById('fileInput').click()">
+                        <i data-lucide="file-up" class="w-10 h-10 text-gray-300 mx-auto mb-3"></i>
+                        <p class="text-sm" style="color:var(--text-secondary)">Arraste ou clique para selecionar</p>
+                        <p class="text-xs mt-1" style="color:var(--text-secondary)">CSV, JSON, XLSX, XLS, TSV, XML</p>
+                        <input type="file" id="fileInput" accept=".csv,.json,.xlsx,.xls,.tsv,.xml" class="hidden" onchange="handleFileSelect(event)">
+                    </div>
+                    <div class="flex gap-2 mt-3 flex-wrap">
+                        <select id="importMode" class="border rounded-lg text-sm px-3 py-2 flex-1" style="background:var(--surface);border-color:var(--border);color:var(--text)"><option value="replace">Substituir tudo (⚠️)</option><option value="append">Adicionar</option><option value="merge">Mesclar (ignorar duplicados)</option></select>
+                        <button onclick="executeImport()" class="px-5 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-all">Importar</button>
+                    </div>
+                    <p id="importPreview" class="text-xs mt-2 hidden" style="color:var(--text-secondary)"></p>
+                </div>
+                <div class="surface-card rounded-xl shadow-sm p-6">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2" style="color:var(--text)"><i data-lucide="download" class="w-5 h-5 text-emerald-500"></i> Exportar</h2>
+                    <div class="space-y-2 mb-6">
+                        <button onclick="exportData('csv', 'all')" class="w-full px-4 py-3 surface-card rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-all flex items-center gap-3" style="border:1px solid var(--border)"><span>📄</span> CSV (Tudo)</button>
+                        <button onclick="exportData('csv', 'filtered')" class="w-full px-4 py-3 surface-card rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-all flex items-center gap-3" style="border:1px solid var(--border)"><span>📄</span> CSV (Filtrado)</button>
+                        <button onclick="exportData('xlsx', 'all')" class="w-full px-4 py-3 surface-card rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-all flex items-center gap-3" style="border:1px solid var(--border)"><span>📊</span> XLSX (Tudo)</button>
+                        <button onclick="exportData('json', 'all')" class="w-full px-4 py-3 surface-card rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-all flex items-center gap-3" style="border:1px solid var(--border)"><span>📦</span> JSON (Tudo)</button>
+                    </div>
+                    <hr class="mb-4" style="border-color:var(--border)">
+                    <h3 class="text-sm font-semibold text-red-600 mb-2">⚠️ Zona de Perigo</h3>
+                    <button onclick="clearAllData()" class="w-full px-4 py-3 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-medium hover:bg-red-100 transition-all flex items-center gap-3 justify-center"><i data-lucide="alert-triangle" class="w-4 h-4"></i> Limpar Todo o Banco de Dados</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW: Relatórios -->
+        <section id="view-reports" class="fade-in hidden space-y-5">
+            <div class="surface-card rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-semibold mb-4" style="color:var(--text)">Indicadores de Valor</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="reportStatsGrid"></div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div class="surface-card rounded-xl shadow-sm p-5"><h3 class="text-sm font-semibold mb-3" style="color:var(--text-secondary)">Conversão por Origem</h3><div class="h-64"><canvas id="chartSourceConversion"></canvas></div></div>
+                <div class="surface-card rounded-xl shadow-sm p-5"><h3 class="text-sm font-semibold mb-3" style="color:var(--text-secondary)">Produtividade por Responsável</h3><div class="h-64"><canvas id="chartOwnerProductivity"></canvas></div></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL: Detalhes do cliente (com timeline e ações) -->
+    <div id="detailPanel" class="fixed top-0 right-0 h-full w-full max-w-lg bg-white dark:bg-slate-900 shadow-2xl z-50 transform translate-x-full transition-transform duration-350 flex flex-col" style="transition-duration:0.35s;">
+        <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--border)"><h3 class="font-semibold text-lg" id="detailTitle" style="color:var(--text)">Detalhes</h3><button onclick="closeDetailPanel()" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+        <div class="flex-1 overflow-y-auto px-5 py-4 space-y-4" id="detailContent"></div>
+        <div class="px-5 py-3 border-t flex gap-2 flex-wrap" style="border-color:var(--border)">
+            <button onclick="editClientFromDetail()" class="flex-1 px-4 py-2.5 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-all">✏️ Editar</button>
+            <button onclick="deleteClientFromDetail()" class="px-4 py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-medium hover:bg-red-100 transition-all">🗑️</button>
+        </div>
+    </div>
+    <div id="detailOverlay" class="fixed inset-0 bg-black/40 z-40 hidden" onclick="closeDetailPanel()"></div>
+
+    <!-- MODAL: Formulário de cliente -->
+    <div id="formModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="absolute inset-0 bg-black/40" onclick="closeFormModal()"></div>
+        <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6 slide-in-right">
+            <h3 class="text-lg font-semibold mb-4" id="formModalTitle" style="color:var(--text)">Adicionar Cliente</h3>
+            <form id="clientForm" onsubmit="saveClientForm(event)" class="space-y-4">
+                <input type="hidden" id="formClientId">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Nome *</label><input type="text" id="formFirstName" required class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></div>
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Sobrenome</label><input type="text" id="formLastName" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></div>
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Email</label><input type="email" id="formEmail" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></div>
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Telefone</label><input type="text" id="formPhone" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></div>
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">WhatsApp</label><input type="text" id="formWhatsapp" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></div>
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">CPF</label><input type="text" id="formCpf" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></div>
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Cidade</label><input type="text" id="formCity" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></div>
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Estado</label><input type="text" id="formState" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></div>
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">País</label><input type="text" id="formCountry" value="Brasil" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></div>
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Status</label><select id="formStatus" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></select></div>
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Origem</label><select id="formSource" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></select></div>
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Responsável</label><input type="text" id="formOwner" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></div>
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Tags (vírgula)</label><input type="text" id="formTags" placeholder="VIP, Urgente" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></div>
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Valor Potencial (R$)</label><input type="number" id="formPotentialValue" step="0.01" min="0" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></div>
+                    <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Valor Convertido (R$)</label><input type="number" id="formConvertedValue" step="0.01" min="0" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></div>
+                    <div class="sm:col-span-2"><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Observações</label><textarea id="formNotes" rows="2" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></textarea></div>
+                </div>
+                <div class="flex gap-2 justify-end mt-5"><button type="button" onclick="closeFormModal()" class="px-4 py-2.5 border rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-all" style="border-color:var(--border);color:var(--text)">Cancelar</button><button type="submit" class="px-5 py-2.5 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-all shadow-sm">💾 Salvar</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Configuração do Funil -->
+    <div id="funnelConfigModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="absolute inset-0 bg-black/40" onclick="closeFunnelConfig()"></div>
+        <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg p-6">
+            <h3 class="text-lg font-semibold mb-4" style="color:var(--text)">Configurar Etapas do Funil</h3>
+            <div class="space-y-2 mb-4" id="funnelStagesList"></div>
+            <div class="flex gap-2 mt-2"><input type="text" id="newStageName" placeholder="Nova etapa" class="flex-1 border rounded-lg px-3 py-2 text-sm" style="background:var(--surface);border-color:var(--border);color:var(--text)"><button onclick="addFunnelStage()" class="px-3 py-2 bg-brand-600 text-white rounded-lg text-sm">Adicionar</button></div>
+            <div class="flex justify-end mt-4"><button onclick="closeFunnelConfig()" class="px-4 py-2 border rounded-lg text-sm" style="border-color:var(--border);color:var(--text)">Fechar</button></div>
+        </div>
+    </div>
+
+    <!-- MODAL: Probabilidades do Funil -->
+    <div id="funnelProbModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="absolute inset-0 bg-black/40" onclick="closeFunnelProbConfig()"></div>
+        <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg p-6">
+            <h3 class="text-lg font-semibold mb-4" style="color:var(--text)">Probabilidades de Fechamento (%)</h3>
+            <div class="space-y-3 mb-4" id="funnelProbList"></div>
+            <div class="flex justify-end"><button onclick="closeFunnelProbConfig()" class="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm">Salvar</button></div>
+        </div>
+    </div>
+
+    <!-- MODAL: Tarefa -->
+    <div id="taskModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="absolute inset-0 bg-black/40" onclick="closeTaskModal()"></div>
+        <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h3 class="text-lg font-semibold mb-4" id="taskModalTitle" style="color:var(--text)">Nova Tarefa</h3>
+            <form onsubmit="saveTask(event)" class="space-y-3">
+                <input type="hidden" id="taskId">
+                <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Título *</label><input type="text" id="taskTitle" required class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></div>
+                <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Data de Vencimento</label><input type="date" id="taskDueDate" class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></div>
+                <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Cliente (opcional)</label><select id="taskClientId" class="w-full border rounded-lg px-3 py-2.5 text-sm" style="background:var(--surface);border-color:var(--border);color:var(--text)"><option value="">Nenhum</option></select></div>
+                <div class="flex gap-2 justify-end"><button type="button" onclick="closeTaskModal()" class="px-4 py-2 border rounded-lg text-sm" style="border-color:var(--border);color:var(--text)">Cancelar</button><button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm">Salvar</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Registrar Atividade -->
+    <div id="activityModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="absolute inset-0 bg-black/40" onclick="closeActivityModal()"></div>
+        <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h3 class="text-lg font-semibold mb-4" style="color:var(--text)">Registrar Atividade</h3>
+            <form onsubmit="saveActivity(event)" class="space-y-3">
+                <input type="hidden" id="activityClientId">
+                <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Tipo</label><select id="activityType" class="w-full border rounded-lg px-3 py-2.5 text-sm" style="background:var(--surface);border-color:var(--border);color:var(--text)"><option value="call">📞 Ligação</option><option value="email">📧 Email</option><option value="whatsapp">💬 WhatsApp</option><option value="meeting">🤝 Reunião</option><option value="note">📝 Nota</option></select></div>
+                <div><label class="block text-xs font-semibold mb-1" style="color:var(--text-secondary)">Descrição</label><textarea id="activityNotes" rows="3" required class="w-full border rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none" style="background:var(--surface);border-color:var(--border);color:var(--text)"></textarea></div>
+                <div class="flex gap-2 justify-end"><button type="button" onclick="closeActivityModal()" class="px-4 py-2 border rounded-lg text-sm" style="border-color:var(--border);color:var(--text)">Cancelar</button><button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm">Registrar</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="fixed top-5 right-5 z-[999] space-y-2 flex flex-col items-end pointer-events-none"></div>
+
+    <script>
+        (function() {
+            // ═══════════════════════════════
+            // ESTADO GLOBAL
+            // ═══════════════════════════════
+            let clients = [];
+            let tasks = [];
+            let funnelStages = ['Lead', 'Contato Inicial', 'Qualificado', 'Proposta Enviada', 'Negociação', 'Fechado Ganho', 'Fechado Perdido'];
+            let funnelProbabilities = { 'Lead': 10, 'Contato Inicial': 25, 'Qualificado': 40, 'Proposta Enviada': 60, 'Negociação': 80, 'Fechado Ganho': 100, 'Fechado Perdido': 0 };
+            const SOURCE_OPTIONS = ['Site', 'Instagram', 'LinkedIn', 'Indicação', 'Google Ads', 'Evento', 'Cold Call', 'WhatsApp'];
+            const OWNER_OPTIONS = ['Ana Silva', 'Bruno Costa', 'Carla Mendes', 'Diego Santos', 'Elena Rossi'];
+
+            const MODEL_SUGGESTIONS = {
+                'openai.com': ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo', 'gpt-4o', 'gpt-4o-mini'],
+                'groq.com': ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'mixtral-8x7b-32768', 'gemma2-9b-it'],
+                'deepseek.com': ['deepseek-chat', 'deepseek-reasoner'],
+                'together.xyz': ['meta-llama/Llama-3.3-70B-Instruct-Turbo', 'mistralai/Mixtral-8x7B-Instruct-v0.1', 'Qwen/Qwen2.5-7B-Instruct-Turbo'],
+                'openrouter.ai': ['google/gemini-2.0-flash-001', 'mistralai/mistral-7b-instruct', 'meta-llama/llama-3.1-8b-instruct', 'anthropic/claude-3-haiku'],
+            };
+            const PRESETS = {
+                groq: { endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'llama-3.1-8b-instant', keyPlaceholder: 'gsk_...' },
+                deepseek: { endpoint: 'https://api.deepseek.com/v1/chat/completions', model: 'deepseek-chat', keyPlaceholder: 'sk-...' },
+                together: { endpoint: 'https://api.together.xyz/v1/chat/completions', model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo', keyPlaceholder: 'tgp_...' },
+                openrouter: { endpoint: 'https://openrouter.ai/api/v1/chat/completions', model: 'google/gemini-2.0-flash-001', keyPlaceholder: 'sk-or-...' },
+                openai: { endpoint: 'https://api.openai.com/v1/chat/completions', model: 'gpt-3.5-turbo', keyPlaceholder: 'sk-proj-...' },
+            };
+
+            let filteredClients = [];
+            let selectedIds = new Set();
+            let currentView = 'dashboard';
+            let currentSort = { field: 'createdAt', dir: 'desc' };
+            let currentPage = 1;
+            const PER_PAGE = 25;
+            let searchQuery = '';
+            let searchTimeout = null;
+            let pendingImportData = null;
+            let detailClientId = null;
+            let isDarkMode = localStorage.getItem('flowcrm_dark') === 'true';
+
+            let chartFunnelInstance = null,
+                chartConversionInstance = null,
+                chartTimelineInstance = null,
+                chartSourceConversionInstance = null,
+                chartOwnerProductivityInstance = null;
+
+            // ═══════════════════════════════
+            // PERSISTÊNCIA
+            // ═══════════════════════════════
+            function loadFromStorage() {
+                try {
+                    const rawClients = localStorage.getItem('flowcrm_v2_clients');
+                    const rawTasks = localStorage.getItem('flowcrm_v2_tasks');
+                    const rawFunnel = localStorage.getItem('flowcrm_v2_funnel');
+                    const rawProb = localStorage.getItem('flowcrm_v2_prob');
+                    if (rawClients) clients = JSON.parse(rawClients);
+                    if (rawTasks) tasks = JSON.parse(rawTasks);
+                    if (rawFunnel) funnelStages = JSON.parse(rawFunnel);
+                    if (rawProb) funnelProbabilities = JSON.parse(rawProb);
+                    // Garantir activities array
+                    clients.forEach(c => { if (!c.activities) c.activities = []; });
+                    return clients.length > 0 || tasks.length > 0;
+                } catch (e) {}
+                return false;
+            }
+
+            function saveToStorage() {
+                try {
+                    localStorage.setItem('flowcrm_v2_clients', JSON.stringify(clients));
+                    localStorage.setItem('flowcrm_v2_tasks', JSON.stringify(tasks));
+                    localStorage.setItem('flowcrm_v2_funnel', JSON.stringify(funnelStages));
+                    localStorage.setItem('flowcrm_v2_prob', JSON.stringify(funnelProbabilities));
+                    localStorage.setItem('flowcrm_dark', isDarkMode);
+                } catch (e) {
+                    showToast('Aviso: Armazenamento local cheio ou indisponível.', 'warning');
+                }
+            }
+
+            function showToast(message, type = 'info') {
+                const container = document.getElementById('toastContainer');
+                const colors = { info: 'bg-slate-800 text-white', success: 'bg-emerald-600 text-white', warning: 'bg-amber-500 text-white', error: 'bg-red-600 text-white' };
+                const icons = { info: 'ℹ️', success: '✅', warning: '⚠️', error: '❌' };
+                const toast = document.createElement('div');
+                toast.className = `toast-enter pointer-events-auto px-4 py-3 rounded-xl shadow-lg text-sm font-medium flex items-center gap-2 max-w-sm ${colors[type] || colors.info}`;
+                toast.innerHTML = `<span>${icons[type] || ''}</span> ${message}`;
+                container.appendChild(toast);
+                setTimeout(() => { toast.style.opacity = '0';
+                    toast.style.transition = 'all 0.3s ease';
+                    setTimeout(() => toast.remove(), 300); }, 3000);
+            }
+
+            function tripleConfirm(message, callback) {
+                const messages = [`⚠️ ${message} (1/3) — Tem certeza?`, `⚠️⚠️ ${message} (2/3) — Esta ação é irreversível. Confirma?`,
+                    `⚠️⚠️⚠️ ${message} (3/3) — Última chance. Digite "CONFIRMAR" para prosseguir.`];
+                for (let i = 0; i < 3; i++) { const answer = i === 2 ? prompt(messages[i]) : confirm(messages[i]); if (i ===
+                        2) { if (answer !== 'CONFIRMAR') return false; } else if (!answer) return false; }
+                callback(); return true;
+            }
+
+            function quadrupleConfirm(message, callback) {
+                const messages = [`⚠️ ${message} (1/4) — Deseja realmente prosseguir?`, `⚠️⚠️ ${message} (2/4) — Todos os dados serão perdidos. Continua?`,
+                    `⚠️⚠️⚠️ ${message} (3/4) — Não há volta. Confirma?`, `⚠️⚠️⚠️⚠️ ${message} (4/4) — Digite "APAGAR TUDO" para confirmar.`];
+                for (let i = 0; i < 4; i++) { const answer = i === 3 ? prompt(messages[i]) : confirm(messages[i]); if (i ===
+                        3) { if (answer !== 'APAGAR TUDO') return false; } else if (!answer) return false; }
+                callback(); return true;
+            }
+
+            function navigateTo(view) {
+                currentView = view;
+                document.querySelectorAll('#navLinks button').forEach(btn => { btn.classList.remove('bg-brand-600',
+                        'text-white');
+                    btn.classList.add('text-slate-300', 'hover:bg-slate-800', 'hover:text-white'); });
+                const navBtn = document.querySelector(`[data-nav="${view}"]`);
+                if (navBtn) { navBtn.classList.remove('text-slate-300', 'hover:bg-slate-800', 'hover:text-white');
+                    navBtn.classList.add('bg-brand-600', 'text-white'); }
+                document.querySelectorAll('section[id^="view-"]').forEach(s => s.classList.add('hidden'));
+                const target = document.getElementById(`view-${view}`);
+                if (target) { target.classList.remove('hidden');
+                    target.classList.add('fade-in'); }
+                if (view === 'dashboard') renderDashboard();
+                if (view === 'pipeline') renderPipeline();
+                if (view === 'clients') { applyAllFilters();
+                    renderClientsTable(); }
+                if (view === 'tasks') renderTasks();
+                if (view === 'reports') renderReports();
+                if (view === 'import') { document.getElementById('importPreview').classList.add('hidden');
+                    pendingImportData = null; }
+                if (window.innerWidth < 768) closeSidebar();
+                refreshLucide();
+            }
+
+            function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open');
+                document.getElementById('sidebarOverlay').classList.toggle('hidden', !document.getElementById('sidebar')
+                    .classList.contains('open')); }
+
+            function closeSidebar() { document.getElementById('sidebar').classList.remove('open');
+                document.getElementById('sidebarOverlay').classList.add('hidden'); }
+
+            function refreshLucide() { if (typeof lucide !== 'undefined') lucide.createIcons(); }
+
+            function escHtml(str) { const div = document.createElement('div');
+                div.textContent = str ?? ''; return div.innerHTML; }
+
+            function formatDate(iso) { if (!iso) return '—';
+                const d = new Date(iso); return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit',
+                    year: 'numeric' }); }
+
+            function formatDateTime(iso) { if (!iso) return '—';
+                const d = new Date(iso); return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit',
+                    year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+
+            function statusBadgeClass(s) { const map = { 'Lead': 'bg-blue-100 text-blue-700', 'Contato Inicial': 'bg-cyan-100 text-cyan-700',
+                    'Qualificado': 'bg-teal-100 text-teal-700', 'Proposta Enviada': 'bg-yellow-100 text-yellow-700',
+                    'Negociação': 'bg-orange-100 text-orange-700', 'Fechado Ganho': 'bg-green-100 text-green-700',
+                    'Fechado Perdido': 'bg-red-100 text-red-700' }; return map[s] || 'bg-gray-100 text-gray-600'; }
+
+            function activityIcon(type) { const map = { call: '📞', email: '📧', whatsapp: '💬', meeting: '🤝',
+                note: '📝' }; return map[type] || '📌'; }
+
+            // ═══════════════════════════════
+            // TEMA ESCURO
+            // ═══════════════════════════════
+            function toggleTheme() {
+                isDarkMode = !isDarkMode;
+                document.documentElement.classList.toggle('dark', isDarkMode);
+                document.getElementById('themeIcon').setAttribute('data-lucide', isDarkMode ? 'sun' : 'moon');
+                document.getElementById('themeLabel').textContent = isDarkMode ? 'Modo Claro' : 'Modo Escuro';
+                saveToStorage();
+                refreshLucide();
+                // Re-render para aplicar cores
+                if (currentView === 'dashboard') renderDashboard();
+                if (currentView === 'pipeline') renderPipeline();
+                if (currentView === 'clients') renderClientsTable();
+                if (currentView === 'tasks') renderTasks();
+                if (currentView === 'reports') renderReports();
+            }
+
+            function applyTheme() {
+                if (isDarkMode) {
+                    document.documentElement.classList.add('dark');
+                    document.getElementById('themeIcon').setAttribute('data-lucide', 'sun');
+                    document.getElementById('themeLabel').textContent = 'Modo Claro';
+                }
+            }
+
+            // ═══════════════════════════════
+            // FILTROS
+            // ═══════════════════════════════
+            function getDateRangeFromPreset(preset) {
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                switch (preset) {
+                    case 'today': return { from: today, to: new Date(today.getTime() + 86400000 - 1) };
+                    case 'yesterday': return { from: new Date(today.getTime() - 86400000), to: new Date(today.getTime() -
+                            1) };
+                    case '7days': return { from: new Date(today.getTime() - 7 * 86400000), to: now };
+                    case '30days': return { from: new Date(today.getTime() - 30 * 86400000), to: now };
+                    case 'thisMonth': return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: now };
+                    case 'lastMonth': const first = new Date(now.getFullYear(), now.getMonth() - 1, 1); return { from: first,
+                            to: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59) };
+                    case 'thisYear': return { from: new Date(now.getFullYear(), 0, 1), to: now };
+                    case 'custom': const fromEl = document.getElementById('dateFrom'),
+                        toEl = document.getElementById('dateTo'); if (fromEl?.value && toEl?.value) return { from: new Date(
+                                fromEl.value + 'T00:00:00'), to: new Date(toEl.value + 'T23:59:59') }; return null;
+                    default: return null;
+                }
+            }
+
+            function applyAllFilters() {
+                const preset = document.getElementById('filterDatePreset')?.value || 'all';
+                document.getElementById('customDateRange')?.classList.toggle('hidden', preset !== 'custom');
+                const statusFilter = document.getElementById('filterStatus')?.value || 'all';
+                const sourceFilter = document.getElementById('filterSource')?.value || 'all';
+                const ownerFilter = document.getElementById('filterOwner')?.value || 'all';
+                const dateRange = getDateRangeFromPreset(preset);
+                filteredClients = clients.filter(c => {
+                    if (searchQuery) { const q = searchQuery.toLowerCase(); const searchable =
+                            `${c.firstName} ${c.lastName} ${c.email} ${c.phone} ${c.whatsapp} ${c.city} ${c.state} ${c.status} ${c.source} ${c.owner} ${(c.tags||[]).join(' ')} ${c.notes||''} ${c.cpf||''}`.toLowerCase(); if (!searchable.includes(q)) return false; }
+                    if (statusFilter !== 'all' && c.status !== statusFilter) return false;
+                    if (sourceFilter !== 'all' && c.source !== sourceFilter) return false;
+                    if (ownerFilter !== 'all' && c.owner !== ownerFilter) return false;
+                    if (dateRange) { const d = new Date(c.createdAt); if (d < dateRange.from || d > dateRange
+                            .to) return false; }
+                    return true;
+                });
+                filteredClients.sort((a, b) => {
+                    let va = a[currentSort.field],
+                        vb = b[currentSort.field];
+                    if (['potentialValue', 'convertedValue'].includes(currentSort.field)) { va = parseFloat(va) || 0;
+                        vb = parseFloat(vb) || 0; }
+                    if (['createdAt', 'updatedAt', 'lastInteraction'].includes(currentSort.field)) { va = new Date(va)
+                            .getTime();
+                        vb = new Date(vb).getTime(); }
+                    if (typeof va === 'string') va = va.toLowerCase();
+                    if (typeof vb === 'string') vb = vb.toLowerCase();
+                    return (va < vb ? -1 : va > vb ? 1 : 0) * (currentSort.dir === 'asc' ? 1 : -1);
+                });
+                currentPage = 1;
+                selectedIds.clear();
+                updateSelectAllCheckbox();
+                updateDeleteSelectedButton();
+                if (currentView === 'clients') renderClientsTable();
+                if (currentView === 'dashboard') renderDashboard();
+            }
+
+            function onSearchDebounced() { clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => { searchQuery = document.getElementById('searchInput')?.value || '';
+                    applyAllFilters(); }, 250); }
+
+            function setSort(field) { if (currentSort.field === field) currentSort.dir = currentSort.dir === 'asc' ? 'desc' :
+                    'asc';
+                else { currentSort.field = field;
+                    currentSort.dir = 'asc'; } applyAllFilters(); }
+
+            function clearCustomDate() { document.getElementById('dateFrom').value = '';
+                document.getElementById('dateTo').value = '';
+                document.getElementById('filterDatePreset').value = 'all';
+                document.getElementById('customDateRange').classList.add('hidden');
+                applyAllFilters(); }
+
+            function updateSelectAllCheckbox() { const selAll = document.getElementById('selectAll'); if (!selAll) return;
+                const pageStart = (currentPage - 1) * PER_PAGE; const pageItems = filteredClients.slice(pageStart, pageStart +
+                    PER_PAGE);
+                selAll.checked = pageItems.length > 0 && pageItems.every(c => selectedIds.has(c.id));
+                selAll.indeterminate = pageItems.some(c => selectedIds.has(c.id)) && !selAll.checked; }
+
+            function toggleSelectAll() { const selAll = document.getElementById('selectAll'); const pageStart = (currentPage -
+                    1) * PER_PAGE; const pageItems = filteredClients.slice(pageStart, pageStart + PER_PAGE); if (selAll
+                    .checked) pageItems.forEach(c => selectedIds.add(c.id));
+                else pageItems.forEach(c => selectedIds.delete(c.id));
+                updateDeleteSelectedButton();
+                renderClientsTable(); }
+
+            function toggleClientSelection(id) { selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
+                updateDeleteSelectedButton();
+                renderClientsTable(); }
+
+            function updateDeleteSelectedButton() { document.getElementById('btnDeleteSelected')?.classList.toggle('hidden',
+                    selectedIds.size === 0); }
+
+            function updateTaskBadge() { const pending = tasks.filter(t => !t.done).length;
+                const badge = document.getElementById('taskBadge'); if (badge) { if (pending > 0) { badge.textContent =
+                        pending;
+                        badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); } } }
+
+            // ═══════════════════════════════
+            // CRUD CLIENTES
+            // ═══════════════════════════════
+            function addClient() { openFormModal(null); }
+
+            function openFormModal(id = null) { const modal = document.getElementById('formModal');
+                document.getElementById('formClientId').value = id || ''; ['formFirstName', 'formLastName', 'formEmail',
+                    'formPhone', 'formWhatsapp', 'formCpf', 'formCity', 'formState', 'formCountry', 'formOwner',
+                    'formTags', 'formPotentialValue', 'formConvertedValue', 'formNotes'
+                ].forEach(f => document.getElementById(f).value = '');
+                document.getElementById('formStatus').innerHTML = funnelStages.map(s =>
+                    `<option value="${s}">${s}</option>`).join('');
+                document.getElementById('formSource').innerHTML = SOURCE_OPTIONS.map(s =>
+                    `<option value="${s}">${s}</option>`).join('');
+                document.getElementById('formModalTitle').textContent = id ? 'Editar Cliente' : 'Adicionar Cliente'; if (id) { const
+                        c = clients.find(x => x.id === id); if (c) { document.getElementById('formFirstName').value = c
+                            .firstName || '';
+                        document.getElementById('formLastName').value = c.lastName || '';
+                        document.getElementById('formEmail').value = c.email || '';
+                        document.getElementById('formPhone').value = c.phone || '';
+                        document.getElementById('formWhatsapp').value = c.whatsapp || '';
+                        document.getElementById('formCpf').value = c.cpf || '';
+                        document.getElementById('formCity').value = c.city || '';
+                        document.getElementById('formState').value = c.state || '';
+                        document.getElementById('formCountry').value = c.country || 'Brasil';
+                        document.getElementById('formStatus').value = c.status;
+                        document.getElementById('formSource').value = c.source;
+                        document.getElementById('formOwner').value = c.owner || '';
+                        document.getElementById('formTags').value = (c.tags || []).join(', ');
+                        document.getElementById('formPotentialValue').value = c.potentialValue || 0;
+                        document.getElementById('formConvertedValue').value = c.convertedValue || 0;
+                        document.getElementById('formNotes').value = c.notes || ''; } } else { document.getElementById(
+                        'formStatus').value = funnelStages[0];
+                    document.getElementById('formSource').value = SOURCE_OPTIONS[0]; }
+                modal.classList.remove('hidden'); }
+
+            function closeFormModal() { document.getElementById('formModal').classList.add('hidden'); }
+
+            function saveClientForm(event) { event.preventDefault(); const id = document.getElementById('formClientId').value;
+                const firstName = document.getElementById('formFirstName').value.trim(); if (!firstName) { showToast(
+                        'Nome é obrigatório.', 'error'); return; } const data = { firstName, lastName: document.getElementById(
+                        'formLastName').value.trim(), email: document.getElementById('formEmail').value.trim(), phone: document
+                        .getElementById('formPhone').value.trim(), whatsapp: document.getElementById('formWhatsapp').value
+                        .trim(), cpf: document.getElementById('formCpf').value.trim(), city: document.getElementById(
+                        'formCity').value.trim(), state: document.getElementById('formState').value.trim(), country: document
+                        .getElementById('formCountry').value.trim(), status: document.getElementById('formStatus').value,
+                    source: document.getElementById('formSource').value, owner: document.getElementById('formOwner').value
+                        .trim(), tags: document.getElementById('formTags').value.split(',').map(t => t.trim()).filter(
+                            Boolean), potentialValue: parseFloat(document.getElementById('formPotentialValue').value) || 0,
+                    convertedValue: parseFloat(document.getElementById('formConvertedValue').value) || 0, notes: document
+                        .getElementById('formNotes').value.trim() }; if (id) { const client = clients.find(c => c.id ===
+                        parseInt(id)); if (client) { const oldStatus = client.status;
+                        Object.assign(client, data);
+                        client.updatedAt = new Date().toISOString(); if (oldStatus !== data.status) { client.activities =
+                                client.activities || [];
+                            client.activities.push({ type: 'note', date: new Date().toISOString(),
+                                notes: `Status alterado de "${oldStatus}" para "${data.status}"`, user: 'Sistema' }); } }
+                    showToast('Cliente atualizado!', 'success'); } else { const newId = clients.length > 0 ? Math.max(...clients
+                        .map(c => c.id)) + 1 : 1;
+                    clients.push({ id: newId, ...data, createdAt: new Date().toISOString(), updatedAt: new Date()
+                            .toISOString(), lastInteraction: new Date().toISOString(), contactCount: 0,
+                        responseRate: 0, activities: [] });
+                    showToast('Cliente adicionado!', 'success'); }
+                saveToStorage();
+                closeFormModal();
+                applyAllFilters(); if (currentView === 'dashboard') renderDashboard(); if (currentView === 'pipeline')
+                    renderPipeline(); if (currentView === 'clients') renderClientsTable(); }
+
+            function deleteSelected() { if (selectedIds.size === 0) return;
+                tripleConfirm(`Excluir ${selectedIds.size} cliente(s) selecionado(s)`, () => { clients = clients.filter(c => !
+                        selectedIds.has(c.id));
+                    selectedIds.clear();
+                    saveToStorage();
+                    applyAllFilters();
+                    showToast('Registros excluídos.', 'success'); if (currentView === 'dashboard') renderDashboard(); if (
+                        currentView === 'pipeline') renderPipeline(); }); }
+
+            function openDetailPanel(id) { detailClientId = id; const c = clients.find(x => x.id === id); if (!c) return;
+                c.activities = c.activities || [];
+                const activitiesHTML = c.activities.length > 0 ? `
+                <div class="mt-4">
+                    <span class="text-xs text-gray-400 uppercase font-semibold">Histórico de Atividades</span>
+                    <div class="mt-2 space-y-0 relative pl-4">
+                        ${c.activities.slice().reverse().map(a => `
+                            <div class="relative pb-3">
+                                <div class="timeline-line"></div>
+                                <div class="timeline-dot" style="background:${a.type==='call'?'#6366f1':a.type==='email'?'#06b6d4':a.type==='whatsapp'?'#10b981':a.type==='meeting'?'#f97316':'#94a3b8'}"></div>
+                                <p class="text-xs font-medium">${activityIcon(a.type)} ${a.type} · ${formatDateTime(a.date)}</p>
+                                <p class="text-xs text-gray-500">${escHtml(a.notes)} ${a.user ? '— ' + escHtml(a.user) : ''}</p>
+                            </div>`).join('')}
+                    </div>
+                </div>` : '<p class="text-xs text-gray-400 mt-4">Nenhuma atividade registrada.</p>';
+                document.getElementById('detailTitle').textContent = `${c.firstName} ${c.lastName || ''}`;
+                const phoneClean = (c.phone || c.whatsapp || '').replace(/\D/g, '');
+                const whatsappClean = (c.whatsapp || c.phone || '').replace(/\D/g, '');
+                document.getElementById('detailContent').innerHTML = `
+                <div class="space-y-3 text-sm">
+                    <div class="flex gap-2 mb-3 flex-wrap">
+                        ${c.phone ? `<a href="tel:${escHtml(c.phone)}" class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium hover:bg-blue-100 transition-all flex items-center gap-1"><i data-lucide="phone" class="w-3.5 h-3.5"></i> Ligar</a>` : ''}
+                        ${whatsappClean ? `<a href="https://wa.me/55${whatsappClean}" target="_blank" class="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-medium hover:bg-green-100 transition-all flex items-center gap-1"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i> WhatsApp</a>` : ''}
+                        ${c.email ? `<a href="mailto:${escHtml(c.email)}" class="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-medium hover:bg-amber-100 transition-all flex items-center gap-1"><i data-lucide="mail" class="w-3.5 h-3.5"></i> Email</a>` : ''}
+                        <button onclick="openActivityModal(${c.id})" class="px-3 py-1.5 bg-brand-50 text-brand-700 rounded-lg text-xs font-medium hover:bg-brand-100 transition-all flex items-center gap-1"><i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Atividade</button>
+                    </div>
+                    <div><span class="text-xs text-gray-400 uppercase font-semibold">Nome</span><p class="font-medium">${escHtml(c.firstName)} ${escHtml(c.lastName||'')}</p></div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><span class="text-xs text-gray-400 uppercase">Email</span><p>${escHtml(c.email)||'—'}</p></div>
+                        <div><span class="text-xs text-gray-400 uppercase">Telefone</span><p>${escHtml(c.phone)||'—'}</p></div>
+                        <div><span class="text-xs text-gray-400 uppercase">WhatsApp</span><p>${escHtml(c.whatsapp)||'—'}</p></div>
+                        <div><span class="text-xs text-gray-400 uppercase">CPF</span><p>${escHtml(c.cpf)||'—'}</p></div>
+                        <div><span class="text-xs text-gray-400 uppercase">Cidade/Estado</span><p>${escHtml(c.city)||'—'}/${escHtml(c.state)||'—'}</p></div>
+                        <div><span class="text-xs text-gray-400 uppercase">País</span><p>${escHtml(c.country)||'—'}</p></div>
+                    </div>
+                    <div><span class="text-xs text-gray-400 uppercase">Status</span><p><span class="px-2 py-0.5 rounded-full text-xs font-medium ${statusBadgeClass(c.status)}">${c.status}</span></p></div>
+                    <div><span class="text-xs text-gray-400 uppercase">Origem</span><p>${escHtml(c.source)}</p></div>
+                    <div><span class="text-xs text-gray-400 uppercase">Responsável</span><p>${escHtml(c.owner)||'—'}</p></div>
+                    <div><span class="text-xs text-gray-400 uppercase">Tags</span><p>${(c.tags||[]).map(t=>`<span class="inline-block px-2 py-0.5 bg-gray-100 rounded-full text-xs mr-1">${escHtml(t)}</span>`).join('')||'—'}</p></div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><span class="text-xs text-gray-400 uppercase">Valor Potencial</span><p class="font-semibold">R$ ${(c.potentialValue||0).toFixed(2)}</p></div>
+                        <div><span class="text-xs text-gray-400 uppercase">Valor Convertido</span><p class="font-semibold">R$ ${(c.convertedValue||0).toFixed(2)}</p></div>
+                    </div>
+                    <div><span class="text-xs text-gray-400 uppercase">Criado em</span><p>${formatDateTime(c.createdAt)}</p></div>
+                    <div><span class="text-xs text-gray-400 uppercase">Última Interação</span><p>${formatDateTime(c.lastInteraction)}</p></div>
+                    <div><span class="text-xs text-gray-400 uppercase">Observações</span><p class="text-gray-600">${escHtml(c.notes)||'—'}</p></div>
+                    ${activitiesHTML}
+                </div>`;
+                document.getElementById('detailPanel').style.transform = 'translateX(0)';
+                document.getElementById('detailOverlay').classList.remove('hidden');
+                refreshLucide(); }
+
+            function closeDetailPanel() { document.getElementById('detailPanel').style.transform = 'translateX(100%)';
+                document.getElementById('detailOverlay').classList.add('hidden');
+                detailClientId = null; }
+
+            function editClientFromDetail() { if (detailClientId) openFormModal(detailClientId);
+                closeDetailPanel(); }
+
+            function deleteClientFromDetail() { if (!detailClientId) return;
+                tripleConfirm('Excluir este cliente', () => { clients = clients.filter(c => c.id !== detailClientId);
+                    selectedIds.delete(detailClientId);
+                    saveToStorage();
+                    applyAllFilters();
+                    closeDetailPanel();
+                    showToast('Cliente excluído.', 'success'); if (currentView === 'dashboard') renderDashboard(); if (
+                        currentView === 'pipeline') renderPipeline(); }); }
+
+            // ═══════════════════════════════
+            // ATIVIDADES
+            // ═══════════════════════════════
+            function openActivityModal(clientId) { document.getElementById('activityClientId').value = clientId;
+                document.getElementById('activityNotes').value = '';
+                document.getElementById('activityModal').classList.remove('hidden'); }
+
+            function closeActivityModal() { document.getElementById('activityModal').classList.add('hidden'); }
+
+            function saveActivity(event) { event.preventDefault(); const clientId = parseInt(document.getElementById(
+                    'activityClientId').value); const type = document.getElementById('activityType').value; const notes =
+                    document.getElementById('activityNotes').value.trim(); if (!notes) { showToast(
+                    'Descreva a atividade.', 'warning'); return; } const c = clients.find(x => x.id === clientId); if (c) { c
+                    .activities = c.activities || [];
+                c.activities.push({ type, date: new Date().toISOString(), notes, user: 'Você' });
+                c.lastInteraction = new Date().toISOString();
+                saveToStorage();
+                closeActivityModal();
+                openDetailPanel(clientId);
+                showToast('Atividade registrada!', 'success'); } }
+
+            // ═══════════════════════════════
+            // TABELA DE CLIENTES
+            // ═══════════════════════════════
+            function renderClientsTable() { const totalPages = Math.ceil(filteredClients.length / PER_PAGE) || 1; if (
+                    currentPage > totalPages) currentPage = totalPages; const start = (currentPage - 1) * PER_PAGE; const
+                    pageItems = filteredClients.slice(start, start + PER_PAGE); const tbody = document.getElementById(
+                    'clientsTableBody');
+                tbody.innerHTML = pageItems.length === 0 ?
+                    '<tr><td colspan="9" class="text-center py-10 text-gray-400">Nenhum cliente encontrado.</td></tr>' :
+                    pageItems.map(c => {
+                        const phoneClean = (c.phone || c.whatsapp || '').replace(/\D/g, '');
+                        const whatsappClean = (c.whatsapp || c.phone || '').replace(/\D/g, '');
+                        return `
+                    <tr class="border-t hover:bg-gray-50/80 dark:hover:bg-slate-800/50 transition-colors ${selectedIds.has(c.id)?'bg-brand-50 dark:bg-brand-900/20':''}" data-id="${c.id}" style="border-color:var(--border)">
+                        <td class="px-3 py-2.5"><input type="checkbox" ${selectedIds.has(c.id)?'checked':''} onchange="toggleClientSelection(${c.id})" class="rounded"></td>
+                        <td class="px-3 py-2.5 font-medium">${escHtml(c.firstName)} ${escHtml(c.lastName||'')}</td>
+                        <td class="px-3 py-2.5 text-gray-600 hidden md:table-cell">${escHtml(c.email)||'—'}</td>
+                        <td class="px-3 py-2.5"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${statusBadgeClass(c.status)}">${c.status}</span></td>
+                        <td class="px-3 py-2.5 text-gray-600 hidden lg:table-cell">${escHtml(c.source)}</td>
+                        <td class="px-3 py-2.5 text-gray-600 hidden lg:table-cell">${escHtml(c.owner)||'—'}</td>
+                        <td class="px-3 py-2.5 text-right font-medium">R$ ${(c.potentialValue||0).toFixed(2)}</td>
+                        <td class="px-3 py-2.5 text-center">
+                            <div class="flex items-center justify-center gap-1">
+                                ${whatsappClean ? `<a href="https://wa.me/55${whatsappClean}" target="_blank" class="p-1 hover:bg-green-50 rounded text-green-600" title="WhatsApp"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></a>` : ''}
+                                <button onclick="openDetailPanel(${c.id})" class="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-brand-600" title="Detalhes"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                            </div>
+                        </td>
+                    </tr>`; }).join('');
+                document.getElementById('paginationInfo').textContent =
+                    `Mostrando ${start+1}–${Math.min(start+PER_PAGE, filteredClients.length)} de ${filteredClients.length}`;
+                document.getElementById('paginationButtons').innerHTML = Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .map(p =>
+                        `<button onclick="goToPage(${p})" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${p===currentPage?'bg-brand-600 text-white':'surface-card hover:bg-gray-50 dark:hover:bg-slate-700'}" style="${p!==currentPage?'border:1px solid var(--border)':''}">${p}</button>`
+                        ).join('');
+                updateSelectAllCheckbox();
+                updateDeleteSelectedButton();
+                refreshLucide(); }
+
+            function goToPage(p) { currentPage = p;
+                renderClientsTable(); }
+
+            // ═══════════════════════════════
+            // PIPELINE COM DRAG-AND-DROP
+            // ═══════════════════════════════
+            function renderPipeline() {
+                const container = document.getElementById('pipelineContainer');
+                container.innerHTML = funnelStages.map(stage => {
+                    const stageClients = clients.filter(c => c.status === stage);
+                    const totalValue = stageClients.reduce((sum, c) => sum + (c.potentialValue || 0), 0);
+                    const prob = funnelProbabilities[stage] || 0;
+                    const weightedValue = stageClients.reduce((sum, c) => sum + (c.potentialValue || 0) * prob / 100, 0);
+                    return `
+                    <div class="pipeline-col flex flex-col" style="scroll-snap-align: start;" data-stage="${stage}"
+                        ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDropOnStage(event)">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-semibold text-sm" style="color:var(--text)">${stage}</h3>
+                            <span class="text-xs bg-white dark:bg-slate-700 px-2 py-0.5 rounded-full" style="color:var(--text-secondary)">${stageClients.length}</span>
+                        </div>
+                        <p class="text-xs mb-1" style="color:var(--text-secondary)">R$ ${totalValue.toFixed(2)}</p>
+                        <p class="text-xs mb-2" style="color:var(--text-secondary)">Prob: ${prob}% · Pond: R$ ${weightedValue.toFixed(2)}</p>
+                        <div class="flex-1 overflow-y-auto space-y-2 max-h-[55vh]" data-stage="${stage}">
+                            ${stageClients.map(c => `
+                                <div class="pipeline-card" draggable="true" data-client-id="${c.id}" ondragstart="handleDragStart(event)" ondragend="handleDragEnd(event)" onclick="event.stopPropagation(); openDetailPanel(${c.id})">
+                                    <p class="font-medium text-sm">${escHtml(c.firstName)} ${escHtml(c.lastName||'')}</p>
+                                    <p class="text-xs" style="color:var(--text-secondary)">${escHtml(c.source)} · R$ ${(c.potentialValue||0).toFixed(2)}</p>
+                                    <div class="flex gap-1 mt-1">${(c.tags||[]).slice(0,2).map(t=>`<span class="text-xs bg-gray-100 dark:bg-slate-700 px-1.5 rounded">${escHtml(t)}</span>`).join('')}</div>
+                                </div>`).join('')}
+                        </div>
+                    </div>`;
+                }).join('');
+                // Previsão total
+                const totalWeighted = clients.reduce((sum, c) => sum + (c.potentialValue || 0) * (funnelProbabilities[c.status] || 0) / 100, 0);
+                const totalPotential = clients.reduce((sum, c) => sum + (c.potentialValue || 0), 0);
+                document.getElementById('pipelineForecast').innerHTML = `
+                    <div class="flex items-center gap-4 flex-wrap">
+                        <div><span class="text-xs" style="color:var(--text-secondary)">Valor Total Bruto:</span> <span class="font-bold text-lg">R$ ${totalPotential.toFixed(2)}</span></div>
+                        <div><span class="text-xs" style="color:var(--text-secondary)">Previsão Ponderada:</span> <span class="font-bold text-lg text-brand-600">R$ ${totalWeighted.toFixed(2)}</span></div>
+                        <div><span class="text-xs" style="color:var(--text-secondary)">Taxa implícita:</span> <span class="font-semibold">${totalPotential>0?((totalWeighted/totalPotential)*100).toFixed(1):0}%</span></div>
+                    </div>`;
+                refreshLucide(); }
+
+            // Drag and Drop handlers
+            let draggedClientId = null;
+
+            function handleDragStart(e) {
+                draggedClientId = parseInt(e.target.closest('.pipeline-card')?.dataset.clientId);
+                if (draggedClientId) {
+                    e.target.closest('.pipeline-card').classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', draggedClientId);
+                }
+            }
+
+            function handleDragEnd(e) {
+                document.querySelectorAll('.pipeline-card.dragging').forEach(c => c.classList.remove('dragging'));
+                document.querySelectorAll('.pipeline-col.drag-over').forEach(c => c.classList.remove('drag-over'));
+                draggedClientId = null;
+            }
+
+            function handleDragOver(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                const col = e.target.closest('.pipeline-col');
+                if (col) col.classList.add('drag-over');
+            }
+
+            function handleDragLeave(e) {
+                const col = e.target.closest('.pipeline-col');
+                if (col && !col.contains(e.relatedTarget)) col.classList.remove('drag-over');
+            }
+
+            function handleDropOnStage(e) {
+                e.preventDefault();
+                const col = e.target.closest('.pipeline-col');
+                if (!col) return;
+                col.classList.remove('drag-over');
+                const newStage = col.dataset.stage;
+                const clientId = draggedClientId || parseInt(e.dataTransfer.getData('text/plain'));
+                if (clientId && newStage) {
+                    const client = clients.find(c => c.id === clientId);
+                    if (client && client.status !== newStage) {
+                        const oldStatus = client.status;
+                        client.status = newStage;
+                        client.updatedAt = new Date().toISOString();
+                        client.activities = client.activities || [];
+                        client.activities.push({ type: 'note', date: new Date().toISOString(),
+                            notes: `Movido de "${oldStatus}" para "${newStage}" via Kanban`, user: 'Você' });
+                        saveToStorage();
+                        renderPipeline();
+                        if (currentView === 'dashboard') renderDashboard();
+                        showToast(`${client.firstName} movido para "${newStage}"`, 'success');
+                    }
+                }
+                draggedClientId = null;
+            }
+
+            function openFunnelConfig() { document.getElementById('funnelConfigModal').classList.remove('hidden');
+                renderFunnelStagesList(); }
+
+            function closeFunnelConfig() { document.getElementById('funnelConfigModal').classList.add('hidden'); }
+
+            function renderFunnelStagesList() { document.getElementById('funnelStagesList').innerHTML = funnelStages.map((s,
+                    i) =>
+                    `<div class="flex items-center justify-between bg-gray-50 dark:bg-slate-800 rounded-lg px-3 py-2"><span>${s}</span><button onclick="removeFunnelStage(${i})" class="text-red-500 hover:text-red-700 text-xs">✕</button></div>`
+                    ).join(''); }
+
+            function addFunnelStage() { const name = document.getElementById('newStageName').value.trim(); if (name && !
+                    funnelStages.includes(name)) { funnelStages.push(name); if (!funnelProbabilities[name])
+                        funnelProbabilities[name] = 50;
+                    saveToStorage();
+                    renderFunnelStagesList();
+                    document.getElementById('newStageName').value = ''; } }
+
+            function removeFunnelStage(index) { if (funnelStages.length <= 2) { showToast('Mínimo de 2 etapas.',
+                    'warning'); return; } const removed = funnelStages[index];
+                funnelStages.splice(index, 1); delete funnelProbabilities[removed];
+                saveToStorage();
+                renderFunnelStagesList(); if (currentView === 'pipeline') renderPipeline(); }
+
+            function openFunnelProbConfig() { document.getElementById('funnelProbModal').classList.remove('hidden');
+                renderFunnelProbList(); }
+
+            function closeFunnelProbConfig() { document.getElementById('funnelProbModal').classList.add('hidden');
+                saveToStorage(); if (currentView === 'pipeline') renderPipeline(); }
+
+            function renderFunnelProbList() { document.getElementById('funnelProbList').innerHTML = funnelStages.map(s => `
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm w-40" style="color:var(--text)">${s}</span>
+                        <input type="range" min="0" max="100" value="${funnelProbabilities[s]||0}" oninput="updateProb('${s}', this.value)" class="flex-1">
+                        <span class="text-sm font-semibold w-12 text-right" id="probVal_${s.replace(/ /g,'_')}">${funnelProbabilities[s]||0}%</span>
+                    </div>`).join(''); }
+
+            function updateProb(stage, value) { funnelProbabilities[stage] = parseInt(value);
+                document.getElementById('probVal_' + stage.replace(/ /g, '_')).textContent = value + '%'; }
+
+            // ═══════════════════════════════
+            // TAREFAS
+            // ═══════════════════════════════
+            function renderTasks() { const filter = document.getElementById('taskFilterStatus')?.value || 'all';
+            const filtered = tasks.filter(t => filter === 'all' || (filter === 'pending' && !t.done) || (filter ===
+                'done' && t.done));
+            document.getElementById('tasksList').innerHTML = filtered.length === 0 ?
+                '<p class="text-gray-400 text-center py-6">Nenhuma tarefa.</p>' : filtered.map(t => `
+                    <div class="flex items-center gap-3 surface-card rounded-lg p-3 hover:shadow-sm transition-shadow" style="border:1px solid var(--border)">
+                        <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${t.id})" class="rounded">
+                        <div class="flex-1"><p class="font-medium text-sm ${t.done?'line-through text-gray-400':''}">${escHtml(t.title)}</p><p class="text-xs" style="color:var(--text-secondary)">${t.dueDate?formatDate(t.dueDate):'Sem data'} ${t.clientId?'· '+ (clients.find(c=>c.id===t.clientId)?.firstName||'Cliente'):''}</p></div>
+                        <button onclick="deleteTask(${t.id})" class="text-gray-400 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>`).join('');
+            updateTaskBadge();
+            refreshLucide(); }
+
+            function addTask() { openTaskModal(null); }
+
+            function openTaskModal(id = null) { document.getElementById('taskModal').classList.remove('hidden');
+                document.getElementById('taskId').value = id || '';
+                document.getElementById('taskTitle').value = '';
+                document.getElementById('taskDueDate').value = '';
+                document.getElementById('taskClientId').innerHTML = '<option value="">Nenhum</option>' + clients.map(c =>
+                    `<option value="${c.id}">${c.firstName} ${c.lastName||''}</option>`).join(''); if (id) { const t = tasks
+                        .find(x => x.id === id); if (t) { document.getElementById('taskTitle').value = t.title;
+                        document.getElementById('taskDueDate').value = t.dueDate || '';
+                        document.getElementById('taskClientId').value = t.clientId || ''; } } }
+
+            function closeTaskModal() { document.getElementById('taskModal').classList.add('hidden'); }
+
+            function saveTask(event) { event.preventDefault(); const id = document.getElementById('taskId').value; const
+            title = document.getElementById('taskTitle').value.trim(); if (!title) { showToast('Título obrigatório.',
+                    'error'); return; } const data = { title, dueDate: document.getElementById('taskDueDate').value,
+                    clientId: document.getElementById('taskClientId').value || null, done: false }; if (id) { const t =
+                        tasks.find(x => x.id === parseInt(id)); if (t) Object.assign(t, data); } else tasks.push({ id: tasks
+                        .length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1, ...data, createdAt: new Date()
+                        .toISOString() });
+                saveToStorage();
+                closeTaskModal();
+                renderTasks();
+                showToast('Tarefa salva!', 'success'); }
+
+            function toggleTask(id) { const t = tasks.find(x => x.id === id); if (t) { t.done = !t.done;
+                    saveToStorage();
+                    renderTasks(); } }
+
+            function deleteTask(id) { tripleConfirm('Excluir esta tarefa', () => { tasks = tasks.filter(t => t.id !== id);
+                    saveToStorage();
+                    renderTasks();
+                    showToast('Tarefa excluída.', 'success'); }); }
+
+            function clearAllData() { quadrupleConfirm('APAGAR TODOS OS DADOS DO CRM', () => { clients = [];
+                    tasks = [];
+                    saveToStorage();
+                    applyAllFilters(); if (currentView === 'dashboard') renderDashboard(); if (currentView ===
+                        'pipeline') renderPipeline(); if (currentView === 'clients') renderClientsTable(); if (
+                        currentView === 'tasks') renderTasks();
+                    showToast('Todos os dados foram apagados.', 'warning'); }); }
+
+            // ═══════════════════════════════
+            // DASHBOARD
+            // ═══════════════════════════════
+            function getMetrics() { const now = new Date(); const todayStart = new Date(now.getFullYear(), now.getMonth(),
+                    now.getDate()); const yesterdayStart = new Date(todayStart.getTime() - 86400000); const weekStart =
+                    new Date(todayStart.getTime() - 7 * 86400000); const monthStart = new Date(now.getFullYear(), now
+                        .getMonth(), 1); const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1); const
+                    lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59); const yearStart = new Date(
+                        now.getFullYear(), 0, 1); const total = clients.length; const todayCount = clients.filter(c =>
+                        new Date(c.createdAt) >= todayStart).length; const yesterdayCount = clients.filter(c => { const d =
+                            new Date(c.createdAt); return d >= yesterdayStart && d < todayStart; }).length; const
+                    weekCount = clients.filter(c => new Date(c.createdAt) >= weekStart).length; const monthCount = clients
+                        .filter(c => new Date(c.createdAt) >= monthStart).length; const lastMonthCount = clients.filter(
+                            c => { const d = new Date(c.createdAt); return d >= lastMonthStart && d <= lastMonthEnd; })
+                        .length; const yearCount = clients.filter(c => new Date(c.createdAt) >= yearStart).length; const
+                    values = clients.map(c => c.potentialValue || 0).filter(v => v > 0); const avg = values.length > 0 ?
+                        values.reduce((a, b) => a + b, 0) / values.length : 0; const sorted = [...values].sort((a, b) => a -
+                            b); const median = sorted.length > 0 ? sorted[Math.floor(sorted.length / 2)] : 0; const freq = {};
+                    values.forEach(v => { const k = Math.round(v);
+                        freq[k] = (freq[k] || 0) + 1; }); let mode = 0,
+                        modeMax = 0;
+                    Object.entries(freq).forEach(([k, v]) => { if (v > modeMax) { modeMax = v;
+                            mode = parseFloat(k); } }); const sum = values.reduce((a, b) => a + b, 0); const ticketMedio =
+                        total > 0 ? sum / total : 0; const variance = values.length > 0 ? values.reduce((s, v) => s + Math
+                            .pow(v - avg, 2), 0) / values.length : 0; const stdDev = Math.sqrt(variance); const
+                    statusCounts = {};
+                    funnelStages.forEach(s => { statusCounts[s] = clients.filter(c => c.status === s).length; }); const
+                        weightedTotal = clients.reduce((sum2, c) => sum2 + (c.potentialValue || 0) * (funnelProbabilities[c
+                            .status] || 0) / 100, 0); return { total, todayCount, yesterdayCount, weekCount, monthCount,
+                        lastMonthCount, yearCount, avg, median, mode, stdDev, variance, sum, ticketMedio, statusCounts,
+                        values, weightedTotal }; }
+
+            function renderDashboard() { const m = getMetrics(); const cards = [{ label: 'Total', value: m.total,
+                    icon: 'users', color: 'bg-brand-500' }, { label: 'Hoje', value: m.todayCount,
+                    icon: 'calendar-check', color: 'bg-emerald-500' }, { label: 'Ontem', value: m.yesterdayCount,
+                    icon: 'calendar', color: 'bg-teal-500' }, { label: '7 dias', value: m.weekCount,
+                    icon: 'calendar-days', color: 'bg-cyan-500' }, { label: 'Este mês', value: m.monthCount,
+                    icon: 'calendar-range', color: 'bg-blue-500' }, { label: 'Mês passado', value: m.lastMonthCount,
+                    icon: 'calendar-off', color: 'bg-violet-500' }, { label: 'Este ano', value: m.yearCount,
+                    icon: 'calendar-heart', color: 'bg-rose-500' }, { label: 'Ticket Médio',
+                    value: `R$ ${m.ticketMedio.toFixed(2)}`, icon: 'dollar-sign', color: 'bg-amber-500' }, { label: 'Previsão Pond.',
+                    value: `R$ ${m.weightedTotal.toFixed(2)}`, icon: 'target', color: 'bg-indigo-500' }, ];
+                document.getElementById('metricsCards').innerHTML = cards.map(c => `
+                    <div class="metric-card rounded-xl shadow-sm p-4 flex items-start gap-3" style="border:1px solid var(--border)">
+                        <div class="w-10 h-10 rounded-lg ${c.color} flex items-center justify-center flex-shrink-0"><i data-lucide="${c.icon}" class="w-5 h-5 text-white"></i></div>
+                        <div><p class="text-xs font-medium uppercase" style="color:var(--text-secondary)">${c.label}</p><p class="text-xl font-bold" style="color:var(--text)">${c.value}</p></div>
+                    </div>`).join('');
+                document.getElementById('statsGrid').innerHTML = `
+                    <div class="surface-card rounded-xl shadow-sm p-4" style="border:1px solid var(--border)"><p class="text-xs uppercase" style="color:var(--text-secondary)">Média</p><p class="text-lg font-bold">R$ ${m.avg.toFixed(2)}</p></div>
+                    <div class="surface-card rounded-xl shadow-sm p-4" style="border:1px solid var(--border)"><p class="text-xs uppercase" style="color:var(--text-secondary)">Mediana</p><p class="text-lg font-bold">R$ ${m.median.toFixed(2)}</p></div>
+                    <div class="surface-card rounded-xl shadow-sm p-4" style="border:1px solid var(--border)"><p class="text-xs uppercase" style="color:var(--text-secondary)">Moda</p><p class="text-lg font-bold">R$ ${m.mode.toFixed(2)}</p></div>
+                    <div class="surface-card rounded-xl shadow-sm p-4" style="border:1px solid var(--border)"><p class="text-xs uppercase" style="color:var(--text-secondary)">Desvio Padrão</p><p class="text-lg font-bold">R$ ${m.stdDev.toFixed(2)}</p></div>`;
+                const recent = [...clients].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5);
+                document.getElementById('recentClientsTable').innerHTML = recent.length === 0 ?
+                    '<p class="text-gray-400 text-sm p-4">Nenhum cliente.</p>' :
+                    `<table class="w-full text-sm"><tbody>${recent.map(c => `<tr class="border-t hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer" onclick="openDetailPanel(${c.id})" style="border-color:var(--border)"><td class="px-3 py-2.5 font-medium">${escHtml(c.firstName)} ${escHtml(c.lastName||'')}</td><td class="px-3 py-2.5"><span class="px-2 py-0.5 rounded-full text-xs ${statusBadgeClass(c.status)}">${c.status}</span></td><td class="px-3 py-2.5">R$ ${(c.potentialValue||0).toFixed(2)}</td><td class="px-3 py-2.5 text-xs" style="color:var(--text-secondary)">${formatDate(c.createdAt)}</td></tr>`).join('')}</tbody></table>`;
+                renderFunnelChart(m.statusCounts);
+                renderConversionChart(m.statusCounts);
+                renderTimelineChart();
+                updateTaskBadge();
+                refreshLucide(); }
+
+            function renderFunnelChart(statusCounts) { const canvas = document.getElementById('chartFunnel'); if (!canvas)
+                    return; if (chartFunnelInstance) chartFunnelInstance.destroy();
+                chartFunnelInstance = new Chart(canvas.getContext('2d'), { type: 'bar', data: { labels: funnelStages,
+                        datasets: [{ data: funnelStages.map(s => statusCounts[s] || 0), backgroundColor: ['#6366f1',
+                                '#06b6d4', '#10b981', '#eab308', '#f97316', '#22c55e', '#ef4444'
+                            ], borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true,
+                            ticks: { precision: 0 } } }, onClick: (e, elements) => { if (elements.length >
+                                0) { const index = elements[0].index;
+                            const stage = funnelStages[index];
+                            document.getElementById('filterStatus').value = stage;
+                            navigateTo('clients');
+                            applyAllFilters(); } } } }); }
+
+            function renderConversionChart(statusCounts) { const canvas = document.getElementById('chartConversion'); if (!
+                    canvas) return; if (chartConversionInstance) chartConversionInstance.destroy(); const rates = funnelStages
+                    .map((s, i) => i === 0 ? 100 : Math.round((statusCounts[s] || 0) / (statusCounts[funnelStages[i - 1]] ||
+                        1) * 100));
+                chartConversionInstance = new Chart(canvas.getContext('2d'), { type: 'line', data: { labels: funnelStages,
+                        datasets: [{ data: rates, borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99,102,241,0.1)', fill: true, tension: 0.3, pointRadius: 4 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, max: 100 } } } }); }
+
+            function renderTimelineChart() { const canvas = document.getElementById('chartTimeline'); if (!canvas) return; if (
+                    chartTimelineInstance) chartTimelineInstance.destroy(); const days = []; const now = new Date(); for (
+                    let i = 29; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+                    days.push({ date: d, label: d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }),
+                        count: 0 }); }
+                clients.forEach(c => { const cd = new Date(c.createdAt); for (let i = days.length - 1; i >= 0; i--) if (cd >=
+                        days[i].date && cd < new Date(days[i].date.getTime() + 86400000)) { days[i].count++;
+                        break; } });
+                chartTimelineInstance = new Chart(canvas.getContext('2d'), { type: 'line', data: { labels: days.map(d => d
+                            .label), datasets: [{ data: days.map(d => d.count), borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99,102,241,0.1)', fill: true, tension: 0.3,
+                        pointRadius: 2 }] }, options: { responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } }); }
+
+            // ═══════════════════════════════
+            // RELATÓRIOS
+            // ═══════════════════════════════
+            function renderReports() { const m = getMetrics();
+                document.getElementById('reportStatsGrid').innerHTML = `
+                    <div class="bg-gray-50 dark:bg-slate-800 rounded-xl p-4"><p class="text-xs uppercase" style="color:var(--text-secondary)">Soma Total</p><p class="text-2xl font-bold">R$ ${m.sum.toFixed(2)}</p></div>
+                    <div class="bg-gray-50 dark:bg-slate-800 rounded-xl p-4"><p class="text-xs uppercase" style="color:var(--text-secondary)">Ticket Médio</p><p class="text-2xl font-bold">R$ ${m.ticketMedio.toFixed(2)}</p></div>
+                    <div class="bg-gray-50 dark:bg-slate-800 rounded-xl p-4"><p class="text-xs uppercase" style="color:var(--text-secondary)">Variância</p><p class="text-2xl font-bold">R$ ${m.variance.toFixed(2)}</p></div>
+                    <div class="bg-gray-50 dark:bg-slate-800 rounded-xl p-4"><p class="text-xs uppercase" style="color:var(--text-secondary)">Desvio Padrão</p><p class="text-2xl font-bold">R$ ${m.stdDev.toFixed(2)}</p></div>`;
+                const sourceCounts = {};
+                clients.forEach(c => { sourceCounts[c.source] = (sourceCounts[c.source] || 0) + 1; }); if (
+                    chartSourceConversionInstance) chartSourceConversionInstance.destroy();
+                chartSourceConversionInstance = new Chart(document.getElementById('chartSourceConversion').getContext('2d'), {
+                    type: 'pie', data: { labels: Object.keys(sourceCounts), datasets: [{ data: Object.values(
+                                sourceCounts), backgroundColor: ['#6366f1', '#06b6d4', '#10b981', '#eab308',
+                                '#f97316', '#8b5cf6', '#ec4899', '#14b8a6'
+                            ] }] }, options: { responsive: true, maintainAspectRatio: false } }); const
+                ownerCounts = {};
+                clients.forEach(c => { ownerCounts[c.owner || 'Sem'] = (ownerCounts[c.owner || 'Sem'] || 0) + 1; }); if (
+                    chartOwnerProductivityInstance) chartOwnerProductivityInstance.destroy();
+                chartOwnerProductivityInstance = new Chart(document.getElementById('chartOwnerProductivity').getContext('2d'), {
+                    type: 'bar', data: { labels: Object.keys(ownerCounts), datasets: [{ data: Object.values(
+                                ownerCounts), backgroundColor: '#6366f1', borderRadius: 6 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+                refreshLucide(); }
+
+            // ═══════════════════════════════
+            // IMPORTAÇÃO / EXPORTAÇÃO (mantido)
+            // ═══════════════════════════════
+            function handleDrop(event) { event.preventDefault();
+                event.target.classList.remove('border-brand-500'); const file = event.dataTransfer.files[0]; if (file)
+                    processFile(file); }
+
+            function handleFileSelect(event) { const file = event.target.files[0]; if (file) processFile(file); }
+
+            function processFile(file) { const ext = file.name.split('.').pop().toLowerCase(); const reader =
+            new FileReader();
+            reader.onload = function(e) { try { const content = e.target.result;
+            let parsed = null; if (ext === 'json') { parsed = JSON.parse(content); if (!Array.isArray(
+                    parsed)) throw new Error('JSON deve ser array.'); } else if (ext === 'csv') parsed =
+                    parseCSV(content);
+                else if (ext === 'tsv') parsed = parseCSV(content, '\t');
+                else if (ext === 'xlsx' || ext === 'xls') { const wb = XLSX.read(content, { type: 'binary' });
+                    parsed = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]); } else if (ext === 'xml')
+                    parsed = parseXML(content);
+                else throw new Error('Formato não suportado.'); if (!parsed || parsed.length === 0) throw new Error(
+                    'Nenhum registro encontrado.');
+                pendingImportData = parsed.map((row, i) => normalizeClientRow(row, i));
+                document.getElementById('importPreview').classList.remove('hidden');
+                document.getElementById('importPreview').textContent =
+                    `✅ ${pendingImportData.length} registros detectados.`;
+                showToast(`${pendingImportData.length} registros carregados.`, 'success'); } catch (err) { showToast(
+                    'Erro: ' + err.message, 'error');
+                pendingImportData = null;
+                document.getElementById('importPreview').classList.add('hidden'); } }; if (ext === 'xlsx' || ext ===
+                    'xls') reader.readAsBinaryString(file);
+                else reader.readAsText(file, 'UTF-8'); }
+
+            function parseCSV(content, delimiter = ',') { const lines = content.split(/\r?\n/).filter(l => l.trim()); if (
+                    lines.length < 2) return []; const headers = lines[0].split(delimiter).map(h => h.trim().replace(
+                    /^"(.*)"$/, '$1')); return lines.slice(1).map(line => { const vals = line.split(delimiter).map(v => v
+                    .trim().replace(/^"(.*)"$/, '$1')); const obj = {};
+                headers.forEach((h, i) => obj[h] = vals[i] || ''); return obj; }); }
+
+            function parseXML(content) { const parser = new DOMParser(); const doc = parser.parseFromString(content,
+                    'text/xml'); const rows = doc.querySelectorAll('record, row, item, cliente'); return Array.from(rows).map(
+                    row => { const obj = {};
+                    row.childNodes.forEach(child => { if (child.nodeType === 1) obj[child.tagName] = child.textContent
+                            ?.trim() || ''; }); return obj; }).filter(o => Object.keys(o).length > 0); }
+
+            function normalizeClientRow(row, index) { const now = new Date().toISOString(); const newId = clients.length > 0 ?
+                    Math.max(...clients.map(c => c.id)) + index + 1 : index + 1; const nameRaw = row.name || row.nome || row
+                    .Name || row.Nome || ''; const [firstName, ...lastParts] = nameRaw.split(' '); return { id: parseInt(row
+                        .id) || newId, firstName: row.firstName || row.primeiro_nome || firstName || 'Sem nome',
+                    lastName: row.lastName || row.sobrenome || (lastParts.length > 0 ? lastParts.join(' ') : ''),
+                    email: row.email || row.Email || '', phone: row.phone || row.telefone || row.Phone || row.Telefone ||
+                        '', whatsapp: row.whatsapp || row.WhatsApp || '', cpf: row.cpf || row.CPF || '', city: row.city ||
+                        row.cidade || row.City || row.Cidade || '', state: row.state || row.estado || row.State || row
+                        .Estado || '', country: row.country || row.pais || row.Country || row.Pais || 'Brasil',
+                    status: funnelStages.includes(row.status || row.Status) ? (row.status || row.Status) : funnelStages[0],
+                    source: SOURCE_OPTIONS.includes(row.source || row.origem || row.Source || row.Origem) ? (row.source ||
+                        row.origem || row.Source || row.Origem) : 'Site', owner: row.owner || row.responsavel || row
+                        .Owner || row.Responsavel || '', tags: typeof row.tags === 'string' ? row.tags.split(',').map(t =>
+                            t.trim()).filter(Boolean) : (Array.isArray(row.tags) ? row.tags : []),
+                    potentialValue: parseFloat(row.potentialValue || row.valor_potencial || row.ValorPotencial || 0) || 0,
+                    convertedValue: parseFloat(row.convertedValue || row.valor_convertido || row.ValorConvertido || 0) ||
+                        0, notes: row.notes || row.observacoes || row.Notes || row.Observacoes || '', createdAt: row
+                        .createdAt || row.data_criacao || row.CreatedAt || now, updatedAt: now, lastInteraction: row
+                        .lastInteraction || row.ultima_interacao || row.LastInteraction || now, contactCount: parseInt(
+                            row.contactCount || row.contatos) || 0, responseRate: parseFloat(row.responseRate || row
+                            .taxa_resposta) || 0, activities: [] }; }
+
+            function executeImport() { if (!pendingImportData || pendingImportData.length === 0) { showToast('Nenhum dado.',
+                    'warning'); return; } const mode = document.getElementById('importMode').value; if (mode ===
+                    'replace') { quadrupleConfirm('SUBSTITUIR TODOS OS DADOS', () => { clients = [...
+                        pendingImportData
+                    ];
+                    finishImport(); }); } else if (mode === 'append') { const maxId = clients.length > 0 ? Math.max(...
+                        clients.map(c => c.id)) : 0;
+                    clients = [...clients, ...pendingImportData.map((r, i) => ({ ...r, id: maxId + i + 1 }))];
+                    finishImport(); } else { const existingEmails = new Set(clients.map(c => c.email).filter(Boolean));
+                    const existingCpfs = new Set(clients.map(c => c.cpf).filter(Boolean)); const maxId = clients.length >
+                        0 ? Math.max(...clients.map(c => c.id)) : 0;
+                    let added = 0;
+                    pendingImportData.forEach(r => { if ((r.email && existingEmails.has(r.email)) || (r.cpf &&
+                            existingCpfs.has(r.cpf))) return;
+                        clients.push({ ...r, id: maxId + (++added) }); });
+                    finishImport(); } }
+
+            function finishImport() { saveToStorage();
+                applyAllFilters();
+                showToast('Importação concluída!', 'success');
+                pendingImportData = null;
+                document.getElementById('importPreview').classList.add('hidden');
+                document.getElementById('fileInput').value = ''; if (currentView === 'dashboard') renderDashboard(); if (
+                    currentView === 'clients') renderClientsTable(); }
+
+            function exportCurrentView() { const data = filteredClients.length > 0 ? filteredClients : clients; if (data
+                    .length === 0) { showToast('Nada para exportar.', 'warning'); return; }
+                downloadFile(convertToCSV(data), 'clientes.csv', 'text/csv');
+                showToast('Exportado!', 'success'); }
+
+            function exportData(format, scope) { let data = scope === 'filtered' ? (filteredClients.length > 0 ?
+                    filteredClients : clients) : clients; if (data.length === 0) { showToast('Nenhum dado.',
+                    'warning'); return; } if (format === 'csv') downloadFile(convertToCSV(data), 'clientes.csv',
+                    'text/csv');
+                else if (format === 'json') downloadFile(JSON.stringify(data, null, 2), 'clientes.json',
+                    'application/json');
+                else if (format === 'xlsx') exportXLSX(data);
+                showToast('Exportado!', 'success'); }
+
+            function convertToCSV(data) { const headers = ['id', 'firstName', 'lastName', 'email', 'phone', 'whatsapp', 'cpf',
+                    'city', 'state', 'country', 'status', 'source', 'owner', 'tags', 'potentialValue', 'convertedValue',
+                    'notes', 'createdAt'
+                ]; return [headers.join(',')].concat(data.map(r => headers.map(h => { let v = r[h] ?? ''; if (Array.isArray(
+                        v)) v = v.join(';'); if (typeof v === 'string' && v.includes(',')) v = '"' + v.replace(
+                    /"/g, '""') + '"'; return v; }).join(','))).join('\n'); }
+
+            function exportXLSX(data) { const ws = XLSX.utils.json_to_sheet(data.map(c => ({ ...c, tags: (c.tags || []).join(
+                        ';') }))); const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+                XLSX.writeFile(wb, 'clientes.xlsx'); }
+
+            function downloadFile(content, filename, mime) { const blob = new Blob(['\uFEFF' + content], { type: mime });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                a.click(); }
+
+            // ═══════════════════════════════
+            // IA ANALYTICS (mantido)
+            // ═══════════════════════════════
+            function applyPreset(provider) { const preset = PRESETS[provider]; if (!preset) return;
+                document.getElementById('iaEndpoint').value = preset.endpoint;
+                document.getElementById('iaModel').value = preset.model;
+                document.getElementById('iaApiKey').placeholder = preset.keyPlaceholder;
+                document.getElementById('iaApiKey').focus();
+                document.getElementById('modelSuggestions').classList.add('hidden');
+                showToast(`Configurado para ${provider.toUpperCase()}. Insira sua chave.`, 'success'); }
+
+            function onEndpointChange() { const endpoint = document.getElementById('iaEndpoint').value.toLowerCase(); const
+            modelInput = document.getElementById('iaModel'); for (const [domain, models] of Object.entries(
+                    MODEL_SUGGESTIONS)) { if (endpoint.includes(domain)) { if (!models.includes(modelInput.value)) {
+                        modelInput.value = models[0]; } return; } } }
+
+            function onModelInput() { const endpoint = document.getElementById('iaEndpoint').value.toLowerCase(); const
+            modelInput = document.getElementById('iaModel'); const query = modelInput.value.toLowerCase(); const
+                    suggestionsDiv = document.getElementById('modelSuggestions'); let suggestions = []; for (const [domain,
+                        models
+                    ] of Object.entries(MODEL_SUGGESTIONS)) { if (endpoint.includes(domain)) { suggestions = models.filter(
+                            m => m.toLowerCase().includes(query)); break; } } if (suggestions.length > 0 && query.length >
+                    0) { suggestionsDiv.innerHTML = suggestions.map(s =>
+                        `<div class="suggestion-item px-3 py-2 text-sm hover:bg-brand-50 cursor-pointer" onclick="selectModel('${s}')">${s}</div>`
+                        ).join('');
+                    suggestionsDiv.classList.remove('hidden'); } else { suggestionsDiv.classList.add('hidden'); } }
+
+            function selectModel(model) { document.getElementById('iaModel').value = model;
+                document.getElementById('modelSuggestions').classList.add('hidden'); }
+            document.addEventListener('click', function(e) { if (!e.target.closest('#iaModel') && !e.target.closest(
+                    '#modelSuggestions')) { document.getElementById('modelSuggestions').classList.add('hidden'); } });
+
+            async function executeIAAnalysis() { const apiKey = document.getElementById('iaApiKey').value.trim(); const
+            endpoint = document.getElementById('iaEndpoint').value.trim(); const model = document.getElementById(
+                    'iaModel').value.trim(); const temperature = parseFloat(document.getElementById('iaTemperature')
+                    .value) || 0.7; const prompt = document.getElementById('iaPrompt').value.trim(); if (!apiKey) {
+                    showToast('Informe a chave da API.', 'warning'); return; } if (!endpoint) { showToast(
+                    'Informe o endpoint.', 'warning'); return; } if (!model) { showToast('Informe o modelo.',
+                    'warning'); return; } const summary = { totalClients: clients.length, totalTasks: tasks.length,
+                    funnel: funnelStages.reduce((acc, s) => { acc[s] = clients.filter(c => c.status === s).length; return acc; },
+                        {}), sources: clients.reduce((acc, c) => { acc[c.source] = (acc[c.source] || 0) + 1; return acc; },
+                        {}), topOwners: clients.reduce((acc, c) => { acc[c.owner || 'Sem'] = (acc[c.owner || 'Sem'] || 0) +
+                            1; return acc; }, {}), avgValue: clients.length > 0 ? (clients.reduce((s, c) => s + (c
+                            .potentialValue || 0), 0) / clients.length).toFixed(2) : 0, totalPotential: clients.reduce(
+                            (s, c) => s + (c.potentialValue || 0), 0).toFixed(2), }; const systemPrompt =
+                    `Você é um analista de CRM sênior. Analise os dados fornecidos e responda com argumentos, justificativas e recomendações. Seja detalhado e profissional.`;
+                const userMessage =
+                    `Dados do CRM:\n${JSON.stringify(summary, null, 2)}\n\nPrompt do usuário: ${prompt || 'Faça uma análise geral dos dados e sugira melhorias.'}`;
+                document.getElementById('iaLoading').classList.remove('hidden');
+                document.getElementById('iaResponse').classList.add('hidden');
+                document.getElementById('iaDebugLog').classList.add('hidden'); const requestBody = { model,
+                    messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }],
+                    temperature, max_tokens: 2000 }; const debugInfo = { endpoint, model, timestamp: new Date()
+                        .toISOString(), requestBody }; try { const response = await fetch(endpoint, { method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                        body: JSON.stringify(requestBody), });
+                    debugInfo.status = response.status;
+                    debugInfo.statusText = response.statusText; if (!response.ok) { const errorBody = await response
+                            .text();
+                        debugInfo.errorBody = errorBody; throw { status: response.status, statusText: response
+                            .statusText, body: errorBody }; } const data = await response.json();
+                    debugInfo.responseData = data; const content = data.choices?.[0]?.message?.content ||
+                        'Sem resposta.';
+                    document.getElementById('iaResponse').innerHTML =
+                        `<div class="ai-response">${content.replace(/\n/g, '<br>')}</div>`;
+                    document.getElementById('iaResponse').classList.remove('hidden');
+                    showToast('Análise concluída!', 'success'); } catch (err) { let errorMessage = ''; if (err.status ===
+                        401) errorMessage = '❌ Erro 401: Chave de API inválida ou expirada. Verifique a chave.'; else if (
+                        err.status === 429) errorMessage =
+                        '❌ Erro 429: Limite de requisições excedido. Aguarde um minuto ou verifique seus créditos.'; else if (
+                        err.status === 500) errorMessage =
+                        '❌ Erro 500: Erro interno do servidor. O modelo pode não existir ou o endpoint estar errado.'; else if (
+                        err.status === 404) errorMessage = '❌ Erro 404: Endpoint não encontrado. Verifique a URL.';
+                    else errorMessage =
+                        `❌ Erro ${err.status || 'desconhecido'}: ${err.statusText || err.message}`;
+                    showToast(errorMessage, 'error');
+                    document.getElementById('iaResponse').innerHTML =
+                        `<p class="text-red-600">${errorMessage}</p><p class="text-xs text-gray-400 mt-2">Verifique o log de depuração abaixo para mais detalhes.</p>`;
+                    document.getElementById('iaResponse').classList.remove('hidden');
+                    debugInfo.error = err;
+                    document.getElementById('iaDebugLog').textContent = JSON.stringify(debugInfo, null, 2);
+                    document.getElementById('iaDebugLog').classList.remove('hidden'); } finally { document.getElementById(
+                        'iaLoading').classList.add('hidden'); } }
+
+            function runLocalAnalysis() { const m = getMetrics(); const total = m.total; const won = m.statusCounts[
+                    'Fechado Ganho'] || 0; const lost = m.statusCounts['Fechado Perdido'] || 0; const conversionRate =
+                    total > 0 ? ((won / total) * 100).toFixed(1) : 0; const topSource = Object.entries(clients.reduce((
+                            acc, c) => { acc[c.source] = (acc[c.source] || 0) + 1; return acc; }, {})).sort((a, b) => b[
+                        1] - a[1])[0] || ['N/A', 0]; const analysis = `
+                <p><strong>📊 Análise Local (Offline)</strong></p>
+                <p><strong>Total de clientes:</strong> ${total}</p>
+                <p><strong>Taxa de conversão (Ganho):</strong> ${conversionRate}% (${won} ganhos de ${total})</p>
+                <p><strong>Perdidos:</strong> ${lost} (${total>0?((lost/total)*100).toFixed(1):0}%)</p>
+                <p><strong>Ticket médio:</strong> R$ ${m.avg.toFixed(2)}</p>
+                <p><strong>Principal origem:</strong> ${topSource[0]} (${topSource[1]} clientes)</p>
+                <p><strong>Previsão ponderada:</strong> R$ ${m.weightedTotal.toFixed(2)}</p>
+                <p><strong>Recomendações:</strong></p>
+                <ul class="list-disc pl-5">
+                    <li>Reforce o canal "${topSource[0]}", que traz mais clientes.</li>
+                    <li>Analise os motivos de perda nos status "Fechado Perdido".</li>
+                    <li>Ofereça follow-up para leads com mais de 7 dias sem interação.</li>
+                    <li>Considere treinar a equipe nos estágios com maior queda de conversão.</li>
+                </ul>
+                <p class="text-xs text-gray-400 mt-2">Análise gerada localmente. Para insights mais profundos, configure uma API de IA.</p>
+            `;
+                document.getElementById('iaResponse').innerHTML = `<div class="ai-response">${analysis}</div>`;
+                document.getElementById('iaResponse').classList.remove('hidden');
+                document.getElementById('iaDebugLog').classList.add('hidden'); }
+
+            // ═══════════════════════════════
+            // ATALHOS DE TECLADO
+            // ═══════════════════════════════
+            function handleKeyboardShortcuts(e) {
+                const key = e.key.toLowerCase();
+                const ctrl = e.ctrlKey || e.metaKey;
+                const shift = e.shiftKey;
+
+                if (ctrl && key === 'k') {
+                    e.preventDefault();
+                    navigateTo('clients');
+                    setTimeout(() => document.getElementById('searchInput')?.focus(), 200);
+                } else if (ctrl && key === 'n' && !shift) {
+                    e.preventDefault();
+                    addClient();
+                } else if (ctrl && shift && key === 't') {
+                    e.preventDefault();
+                    addTask();
+                } else if (ctrl && key === 'd') {
+                    e.preventDefault();
+                    navigateTo('dashboard');
+                } else if (ctrl && key === 'p') {
+                    e.preventDefault();
+                    navigateTo('pipeline');
+                } else if (ctrl && key === 'l') {
+                    e.preventDefault();
+                    navigateTo('clients');
+                } else if (e.key === 'Escape') {
+                    closeDetailPanel();
+                    closeFormModal();
+                    closeTaskModal();
+                    closeFunnelConfig();
+                    closeFunnelProbConfig();
+                    closeActivityModal();
+                }
+            }
+
+            // ═══════════════════════════════
+            // NOTIFICAÇÕES
+            // ═══════════════════════════════
+            function checkDueTasks() {
+                const now = new Date();
+                const overdue = tasks.filter(t => !t.done && t.dueDate && new Date(t.dueDate) < now);
+                if (overdue.length > 0 && Notification.permission === 'granted') {
+                    new Notification('FlowCRM', { body: `${overdue.length} tarefa(s) vencida(s)!`, icon: '📋' });
+                }
+            }
+
+            function requestNotificationPermission() {
+                if ('Notification' in window && Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+            }
+
+            // ═══════════════════════════════
+            // INICIALIZAÇÃO
+            // ═══════════════════════════════
+            function init() {
+                applyTheme();
+                if (!loadFromStorage()) { clients = [];
+                    tasks = [];
+                    saveToStorage(); }
+                const statusSel = document.getElementById('filterStatus'); if (statusSel) statusSel.innerHTML =
+                    '<option value="all">🏷️ Status</option>' + funnelStages.map(s =>
+                        `<option value="${s}">${s}</option>`).join('');
+                const sourceSel = document.getElementById('filterSource'); if (sourceSel) sourceSel.innerHTML =
+                    '<option value="all">📌 Origem</option>' + SOURCE_OPTIONS.map(s =>
+                        `<option value="${s}">${s}</option>`).join('');
+                const ownerSel = document.getElementById('filterOwner'); if (ownerSel) ownerSel.innerHTML =
+                    '<option value="all">👤 Resp.</option>' + OWNER_OPTIONS.map(o =>
+                        `<option value="${o}">${o}</option>`).join('');
+                applyAllFilters();
+                renderDashboard();
+                refreshLucide();
+                updateTaskBadge();
+                document.addEventListener('keydown', handleKeyboardShortcuts);
+                requestNotificationPermission();
+                checkDueTasks();
+                setInterval(checkDueTasks, 60000);
+                console.log('🚀 FlowCRM v2.1 iniciado com', clients.length, 'clientes e', tasks.length, 'tarefas.');
+                console.log('⌨️ Atalhos: Ctrl+K buscar | Ctrl+N novo cliente | Ctrl+Shift+T tarefa | Ctrl+D dashboard | Ctrl+P pipeline | Ctrl+L clientes');
+            }
+
+            // Globais
+            window.toggleSidebar = toggleSidebar;
+            window.navigateTo = navigateTo;
+            window.toggleTheme = toggleTheme;
+            window.onSearchDebounced = onSearchDebounced;
+            window.applyAllFilters = applyAllFilters;
+            window.setSort = setSort;
+            window.clearCustomDate = clearCustomDate;
+            window.toggleSelectAll = toggleSelectAll;
+            window.toggleClientSelection = toggleClientSelection;
+            window.openDetailPanel = openDetailPanel;
+            window.closeDetailPanel = closeDetailPanel;
+            window.editClientFromDetail = editClientFromDetail;
+            window.deleteClientFromDetail = deleteClientFromDetail;
+            window.openFormModal = openFormModal;
+            window.closeFormModal = closeFormModal;
+            window.saveClientForm = saveClientForm;
+            window.addClient = addClient;
+            window.deleteSelected = deleteSelected;
+            window.handleDrop = handleDrop;
+            window.handleFileSelect = handleFileSelect;
+            window.executeImport = executeImport;
+            window.exportData = exportData;
+            window.exportCurrentView = exportCurrentView;
+            window.goToPage = goToPage;
+            window.openFunnelConfig = openFunnelConfig;
+            window.closeFunnelConfig = closeFunnelConfig;
+            window.addFunnelStage = addFunnelStage;
+            window.removeFunnelStage = removeFunnelStage;
+            window.addTask = addTask;
+            window.closeTaskModal = closeTaskModal;
+            window.saveTask = saveTask;
+            window.toggleTask = toggleTask;
+            window.deleteTask = deleteTask;
+            window.clearAllData = clearAllData;
+            window.executeIAAnalysis = executeIAAnalysis;
+            window.runLocalAnalysis = runLocalAnalysis;
+            window.applyPreset = applyPreset;
+            window.onEndpointChange = onEndpointChange;
+            window.onModelInput = onModelInput;
+            window.selectModel = selectModel;
+            window.handleDragStart = handleDragStart;
+            window.handleDragEnd = handleDragEnd;
+            window.handleDragOver = handleDragOver;
+            window.handleDragLeave = handleDragLeave;
+            window.handleDropOnStage = handleDropOnStage;
+            window.openFunnelProbConfig = openFunnelProbConfig;
+            window.closeFunnelProbConfig = closeFunnelProbConfig;
+            window.updateProb = updateProb;
+            window.openActivityModal = openActivityModal;
+            window.closeActivityModal = closeActivityModal;
+            window.saveActivity = saveActivity;
+
+            init();
+        })();
+    </script>
+</body>
+</html>
