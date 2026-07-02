@@ -1,7 +1,6 @@
-
 # FollowFlow — Intelligent Follow-Up Manager
 
-**FollowFlow** is a lightweight, browser‑based follow‑up and task management system designed for service‑based businesses. It helps you manage appointments, track client history, automate task generation, and keep your team organized — all without a backend.
+**FollowFlow** is a lightweight, browser‑based follow‑up and task management system designed for service‑based businesses. It helps you manage appointments, track daily reports, automate task generation, and keep your team organized — all without a backend.
 
 ![FollowFlow Dashboard](screenshots/dashboard.png)
 
@@ -10,14 +9,15 @@
 ## ✨ Features
 
 - **📌 Task Management** – View today’s tasks, completed tasks, and future tasks with date filtering.
-- **📅 Upcoming View** – Filter tasks by today, tomorrow, 7/15/30 days, or a specific date.
+- **📅 Upcoming View** – Filter tasks by today, tomorrow, 7/15/30 days, a specific date, or overdue items.
 - **✚ Appointment Registration** – Register clients, services, items, and payments. Tasks are automatically generated based on your protocols.
 - **📂 Protocols** – Create service protocols with automatic follow‑up actions (days after, title, message).
-- **📖 Client History** – Search and view all appointments, tasks, and payment history for any client.
-- **📊 Dashboard** – Quick metrics: today’s appointments, pending tasks, overdue tasks, and monthly client count.
-- **💾 Backup** – Export/import all data as JSON, or clear everything.
+- **📋 Today's Report** – View all appointments for the current day and export them in **6 formats**: JSON, CSV, XML, HTML, TSV, and TXT.
+- **📊 Dashboard** – Quick metrics: today’s appointments, pending tasks, overdue tasks, and monthly client count, plus top services.
+- **💾 Backup & Management** – Export/import all data as JSON, clear everything, or **delete only appointments and tasks** while keeping clients and protocols intact.
 - **🌐 Zero Backend** – Everything runs in your browser using `localStorage`.
 - **🧩 Bulk Actions** – Select multiple tasks and delete them at once.
+- **📥 Smart Import** – Import schedules from `.txt` files with support for **ClassPass** entries and automatic price extraction.
 
 ---
 
@@ -64,7 +64,8 @@ FollowFlow/
 2. **Register Appointments** – Select the client, service, add items/payments, and save.
 3. **Tasks are auto‑generated** – Based on the protocol’s actions, tasks appear in the “Tasks” and “Upcoming” views.
 4. **Manage Tasks** – Mark as done, edit, copy messages, or delete.
-5. **Track History** – Search for any client to see their full timeline.
+5. **View Today's Report** – See all appointments for the current day and export in 6 different formats.
+6. **Manage Data** – Use the Backup section to export/import JSON, clear all data, or delete only appointments and tasks.
 
 ---
 
@@ -72,9 +73,9 @@ FollowFlow/
 
 *(Add your screenshots here)*
 
-| Dashboard | Tasks | Upcoming | Protocols |
-|-----------|-------|----------|-----------|
-| ![Dashboard](screenshots/dashboard.png) | ![Tasks](screenshots/tasks.png) | ![Upcoming](screenshots/upcoming.png) | ![Protocols](screenshots/protocols.png) |
+| Dashboard | Tasks | Upcoming | Today's Report |
+|-----------|-------|----------|----------------|
+| ![Dashboard](screenshots/dashboard.png) | ![Tasks](screenshots/tasks.png) | ![Upcoming](screenshots/upcoming.png) | ![Report](screenshots/report.png) |
 
 ---
 
