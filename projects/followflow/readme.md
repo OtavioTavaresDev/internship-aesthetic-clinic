@@ -30,15 +30,6 @@
 
 ---
 
-## 📁 Project Structure
-
-```
-FollowFlow/
-├── index.html          # Single‑file application (all code embedded)
-├── screenshots/        # (optional) Screenshots for README
-├── README.md           # This file
-└── LICENSE             # MIT License
-```
 
 > The entire application is contained in a single `index.html` file for easy deployment and portability.
 
