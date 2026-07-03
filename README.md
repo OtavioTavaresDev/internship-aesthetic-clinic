@@ -72,11 +72,6 @@ Simple counter application created for repetitive operational tasks.
 
 ---
 
-## 📸 Screenshots
-
-*Coming soon.*
-
----
 
 ## 🚀 Future Improvements
 
